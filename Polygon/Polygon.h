@@ -20,12 +20,22 @@ typedef std::vector<std::string> MT_QUALIFIERS_CONT;
 
 typedef std::vector<const int*> MT_COORDINATES_CONT;
 
+typedef int MT_ERROR_TYPE;
+
 enum Quadrants
 {
 	Q_FIRST = 1,
 	Q_SECOND,
 	Q_THIRD,
 	Q_FOURTH
+};
+
+enum ErrorTypes
+{
+	ET_NONE = 0,
+	ET_ANGLE_SUM_TOO_HIGH,
+	ET_ANGLE_SUM_TOO_LOW,
+	ET_INVALID_SIDE_LENGTH
 };
 
 namespace SBX
@@ -58,7 +68,7 @@ namespace SBX
 
 		virtual void AnalyzePolygon(void) {}
 
-		virtual void CalculateAngles(void);
+		virtual MT_ERROR_TYPE CalculateAngles(void);
 		
 		virtual MT_QUALIFIERS_CONT GetQualifiers(void) { return m_qualifiers_cont; }
 
@@ -70,6 +80,7 @@ namespace SBX
 
 		void   SetVertex(Vertex vertex, int vertex_id);
 		void   SetVertex(int vertex_id, int x, int y, float angle = 90.0);
+		void   SetVertexAngle(int vertex_id, float angle);
 		void   SetRotationVertex(int vertex_id, int x, int y, float angle = 90.0);
 		Vertex GetVertex(int vertex_id) const;
 
@@ -127,7 +138,7 @@ namespace SBX
 		int GetMinX(void);
 		int GetMinY(void);
 		int GetRoughCenterX(void);
-		int GetRoughCenterY(void);
+		int GetRoughCenterY(void);   
 
 		int GetMaxThickness(void);
 
@@ -171,6 +182,8 @@ namespace SBX
 		static double CalcDistance(int x_1, int y_1, int x_2, int y_2);
 
 		static bool CompareSlopes(double slope_1, double slope_2);
+
+		static wstring VertexLabel(int vertex_id);
 
 	protected:
 		//Operators

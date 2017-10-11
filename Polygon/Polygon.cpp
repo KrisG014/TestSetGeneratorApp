@@ -5,6 +5,7 @@
 #include <math.h> 
 #include <stdlib.h>  
 #include <vector>
+#include <assert.h>
 
 using namespace SBX;
 
@@ -94,6 +95,12 @@ void Polygon::SetVertex(int vertex_id, int x, int y, float angle)
 {
 	Vertex vertex(x, y, angle);
 	SetVertex(vertex, vertex_id);
+}
+
+//...................................................................................
+void Polygon::SetVertexAngle(int vertex_id, float angle)
+{
+	m_vertices_cont[vertex_id].SetAngle(angle);
 }
 
 //...................................................................................
@@ -405,17 +412,11 @@ void Polygon::ValidateSide(int side_label)
 }
 
 //...................................................................................
-void Polygon::CalculateAngles(void)
+MT_ERROR_TYPE Polygon::CalculateAngles(void)
 {
-	if (m_is_regular)
-	{
-		float regular_angle = GetRegularAngle();
-		for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
-		{
-			(*iter).second.SetAngle(regular_angle);
-		}
-	}
-	else
+	MT_ERROR_TYPE error_type(ET_NONE);
+
+	if (!m_is_regular)
 	{
 		//Completely randomize any angles that have not yet been set
 		float total_interior_angle_sum = (float)(((float)m_num_sides - 2.0) * 180.0);
@@ -434,18 +435,31 @@ void Polygon::CalculateAngles(void)
 				}
 			}
 		}	
-		//iterate again to fill in any remaining angles
-		for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
+		if (total_interior_angle_left > 0)
 		{
-			if ((*iter).second.GetAngle() <= 0)
+			//iterate again to fill in any remaining angles
+			for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
 			{
-				int actual_available_angle = (int)total_interior_angle_left - ((int)m_vertices_cont.size() - (*iter).first - 1);
-				float rand_angle = (float)(std::rand() % actual_available_angle + 1);
-				(*iter).second.SetAngle(rand_angle);
-				actual_available_angle = (int)(actual_available_angle - rand_angle);
+				if ((*iter).second.GetAngle() <= 0)
+				{
+					int actual_available_angle = (int)total_interior_angle_left - ((int)m_vertices_cont.size() - (*iter).first - 1);
+					float rand_angle = (float)(std::rand() % actual_available_angle + 1);
+					(*iter).second.SetAngle(rand_angle);
+					total_interior_angle_left -= rand_angle;
+				}
+			}
+			if (total_interior_angle_left > 0)
+			{
+				error_type = ET_ANGLE_SUM_TOO_LOW;
 			}
 		}
+		else if (total_interior_angle_left < 0)
+		{
+			error_type = ET_ANGLE_SUM_TOO_HIGH;
+		}
 	}
+
+	return error_type;
 }
 
 //...................................................................................
@@ -469,7 +483,7 @@ void Polygon::CalculateSidesAndVertices()
 		else
 		{
 			current_angle_by_direction += starting_vertex.GetAngle();
-			int quadrant = GetQuadrant(current_angle_by_direction);
+			int quadrant = GetQuadrant((int)current_angle_by_direction);
 			//keep in mind, quadrants are shifted by 1...the first quadrant is where the second would normally be
 			int x_change = quadrant == Q_FIRST || quadrant == Q_FOURTH ? 1 : -1;
 			int y_change = quadrant == Q_FIRST || quadrant == Q_SECOND ? 1 : -1;
@@ -1340,6 +1354,15 @@ bool Polygon::CompareSlopes(double slope_1, double slope_2)
 	}
 
 	return is_acceptable_rounding;
+}
+
+//...................................................................................
+wstring Polygon::VertexLabel(int vertex_id)
+{
+	wstring label;
+	assert(vertex_id >= 0 && vertex_id < 52);
+	label = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"[vertex_id];
+	return label;
 }
 
 //...................................................................................

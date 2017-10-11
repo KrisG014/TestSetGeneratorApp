@@ -35,16 +35,16 @@ public:
 
 	void InitializeSquare(int side_ab);
 	void InitializeRectange(int side_ab, int side_bc);
-	void InitializeRhombus(int side_ab);
-	void InitializeParallelogram(int side_ab, int side_bc);
-	void InitializeTrapezoid(int side_ab, int side_bc, int side_cd, int side_da);
-	void InitializeKite(int side_ab, int side_bc);
-	void InitializeQuad(int side_ab, int side_bc, int side_cd, int side_da);
+	void InitializeRhombus(int side_ab, float vertex_A_angle, float vertex_B_angle);
+	void InitializeParallelogram(int side_ab, int side_bc, float vertex_A_angle, float vertex_B_angle);
+	void InitializeTrapezoid(int side_ab, int side_bc, int side_cd, int side_da, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle, float vertex_D_angle);
+	void InitializeKite(int side_ab, int side_bc, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle);
+	void InitializeQuad(int side_ab, int side_bc, int side_cd, int side_da, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle, float vertex_D_angle);
 
 	//Inherited methods from Polygon
 	void InitPolygon(void);
 	void AnalyzePolygon(void);
-	void CalculateAngles(void);
+	bool CalculateAngles(void);
 
 	std::string GenerateFilePathExtension(void);
 

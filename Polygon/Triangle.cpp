@@ -8,13 +8,7 @@ Triangle::Triangle()
 {
 	InitPolygon();
 
-	m_is_equil = false;
-	m_is_iso = false;
-	m_is_right = false;
-	m_is_acute = false;
-	m_is_obtuse = false;
-
-	SetFirstVertex(0, 0, m_default_angle);
+	SetFirstVertex(0, 0, m_default_angle, false);
 }
 
 Triangle::Triangle(int side_ab, int side_bc, int side_ca, int starting_vertex_x_coord, int starting_vertex_y_coord, float starting_vertex_angle)
@@ -25,86 +19,96 @@ Triangle::Triangle(int side_ab, int side_bc, int side_ca, int starting_vertex_x_
 	SetSideLength(SL_BC, side_bc);
 	SetSideLength(SL_CA, side_ca);
 
-	m_is_equil = false;
-	m_is_iso = false;
-	m_is_right = false;
-	m_is_acute = false;
-	m_is_obtuse = false;
-
 	Vertex vertex(starting_vertex_x_coord, starting_vertex_y_coord, starting_vertex_angle);
 	SetFirstVertex(vertex);
 
 	CalculateSidesAndVertices();
 }
 //////////////////////////////////////////////////////////////////////////////////////
-void Triangle::InitializeEquilateral(int side_ab)
+MT_ERROR_TYPE Triangle::InitializeEquilateral(int side_ab)
 {
-	m_is_equil = true;
+	SetIsEquilateral(true);
 	
 	SetIsRegular(true);
 
-	InitializeAcute(side_ab, side_ab, side_ab);
+	return InitializeAcute(side_ab, side_ab, side_ab, 60.0, 60.0, 60.0);
 }
 
 //...................................................................................
-void Triangle::InitializeIsoceles(int side_ab, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeIsoceles(int side_ab, int side_ca, float vertex_A_angle, float vertex_C_angle)
 {
-	m_is_iso = true;
+	SetIsIsoceles(true);
 
-	InitializeTri(side_ab, side_ab, side_ca);
+	return InitializeTri(side_ab, side_ab, side_ca, vertex_A_angle, vertex_A_angle, vertex_C_angle);
 }
 
 //...................................................................................
-void Triangle::InitializeRight(int side_ab, int side_bc, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeRight(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle)
 {
-	m_is_right = true;
+	SetIsRight(true);
 
-	InitializeTri(side_ab, side_bc, side_ca);
+	return InitializeTri(side_ab, side_bc, side_ca, vertex_A_angle, vertex_B_angle, vertex_C_angle);
 }
 
 //...................................................................................
-void Triangle::InitializeRightIsoceles(int side_ab, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeRightIsoceles(int side_ab, int side_ca, float vertex_A_angle, float vertex_C_angle)
 {
-	m_is_iso = true;
-	m_is_right = true;
+	SetIsIsoceles(true);
+	SetIsRight(true);
 
-	InitializeTri(side_ab, side_ab, side_ca);
+	return InitializeTri(side_ab, side_ab, side_ca, vertex_A_angle, vertex_A_angle, vertex_C_angle);
 }
 
 //...................................................................................
-void Triangle::InitializeAcute(int side_ab, int side_bc, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeAcute(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle)
 {
-	m_is_acute = true;
+	SetIsAcute(true);
 
-	InitializeTri(side_ab, side_bc, side_ca);
+	return InitializeTri(side_ab, side_bc, side_ca, vertex_A_angle, vertex_B_angle, vertex_C_angle);
 }
 
 //...................................................................................
-void Triangle::InitializeObtuse(int side_ab, int side_bc, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeObtuse(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle)
 {
-	m_is_obtuse = true;
+	SetIsObtuse(true);
 
-	InitializeTri(side_ab, side_bc, side_ca);
+	return InitializeTri(side_ab, side_bc, side_ca, vertex_A_angle, vertex_B_angle, vertex_C_angle);
 }
 
 //...................................................................................
-void Triangle::InitializeScalene(int side_ab, int side_bc, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeScalene(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle)
 {
-	m_is_scalene = true;
+	SetIsScalene(true);
 
-	InitializeTri(side_ab, side_bc, side_ca);
+	return InitializeTri(side_ab, side_bc, side_ca, vertex_A_angle, vertex_B_angle, vertex_C_angle);
 }
 
 //...................................................................................
-void Triangle::InitializeTri(int side_ab, int side_bc, int side_ca)
+MT_ERROR_TYPE Triangle::InitializeTri(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle)
 {
+	MT_ERROR_TYPE error_type(ET_NONE);
+
 	SetSideLength(SL_AB, side_ab);
 	SetSideLength(SL_BC, side_bc);
 	SetSideLength(SL_CA, side_ca);
 
-	CalculateAngles();
+	SetVertexAngle(Vertex::VI_A, vertex_A_angle);
+	SetVertexAngle(Vertex::VI_B, vertex_B_angle);
+	SetVertexAngle(Vertex::VI_C, vertex_C_angle);
+
+	error_type = CalculateAngles();
 	CalculateSidesAndVertices();
 	SetFilePathExtension(GenerateFilePathExtension());
+
+	return error_type;
+}
+
+//...................................................................................
+MT_ERROR_TYPE Triangle::ValidateAngles(void)
+{
+	MT_ERROR_TYPE error_type(ET_NONE);
+	//...Do Stuff here
+	return error_type;
 }
 
 //...................................................................................
@@ -114,8 +118,16 @@ void Triangle::InitializeTri(int side_ab, int side_bc, int side_ca)
 //...................................................................................
 void Triangle::InitPolygon(void)
 {
-	Polygon::m_num_sides = 3;
+	SetNumSides(3);
 	SetPolygonType(TRIANGLE);
+
+	SetIsEquilateral(false);
+	SetIsIsoceles(false);
+	SetIsRight(false);
+	SetIsAcute(false);
+	SetIsObtuse(false);
+	SetIsScalene(false);
+
 	Polygon::InitPolygon();
 }
 
@@ -126,47 +138,48 @@ void Triangle::AnalyzePolygon(void)
 }
 
 //...................................................................................
-void Triangle::CalculateAngles(void)
+MT_ERROR_TYPE Triangle::CalculateAngles(void)
 {
-	if (m_is_equil)
+	MT_ERROR_TYPE error_type(ET_NONE);
+	
+	if (IsEquilateral())
 	{
-		for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
-		{
-			(*iter).second.SetAngle(60.0);
-		}
+		//...
 	}
 	else
 	{
-		Polygon::CalculateAngles();
+		error_type = Polygon::CalculateAngles();
 	}
+
+	return error_type;
 }
 
 //...................................................................................
 std::string Triangle::GenerateFilePathExtension(void)
 {
 	std::string filepath_extension("");
-	if (m_is_scalene)
+	if (IsScalene())
 	{
 		filepath_extension += SCALENE + "/";
 	}
-	else if (m_is_iso)
+	else if (IsIsoceles())
 	{
 		filepath_extension += ISOCELES + "/";
 	}
-	else if (m_is_equil)
+	else if (IsEquilateral())
 	{
 		filepath_extension += EQUILATERAL + "/";
 	}
 
-	if (m_is_obtuse)
+	if (IsObtuse())
 	{
 		filepath_extension += OBTUSE + "/";
 	}
-	else if (m_is_acute)
+	else if (IsAcute())
 	{
 		filepath_extension += ACUTE + "/";
 	}
-	else if (m_is_right)
+	else if (IsRight())
 	{
 		filepath_extension += RIGHT + "/";
 	}
@@ -179,27 +192,27 @@ MT_QUALIFIERS_CONT Triangle::GetQualifiers(void)
 {
 	m_qualifiers_cont.clear();
 
-	if (m_is_equil)
+	if (IsEquilateral())
 	{
 		m_qualifiers_cont.push_back(EQUILATERAL);
 	}
-	if (m_is_iso)
+	if (IsIsoceles())
 	{
 		m_qualifiers_cont.push_back(ISOCELES);
 	}
-	if (m_is_right)
+	if (IsRight())
 	{
 		m_qualifiers_cont.push_back(RIGHT);
 	}
-	if (m_is_acute)
+	if (IsAcute())
 	{
 		m_qualifiers_cont.push_back(ACUTE);
 	}
-	if (m_is_obtuse)
+	if (IsObtuse())
 	{
 		m_qualifiers_cont.push_back(OBTUSE);
 	}
-	if (m_is_scalene)
+	if (IsScalene())
 	{
 		m_qualifiers_cont.push_back(SCALENE);
 	}

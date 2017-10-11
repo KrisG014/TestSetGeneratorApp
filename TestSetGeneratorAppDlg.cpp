@@ -7,6 +7,8 @@
 #include "TestSetGeneratorAppDlg.h"
 #include "afxdialogex.h"
 
+#include <cstringt.h>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -71,6 +73,9 @@ void CTestSetGeneratorAppDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT6, m_eb_side_thickness);
 	DDX_Control(pDX, IDC_STATIC10, m_lbl_progress);
 	DDX_Control(pDX, IDC_COMBO2, m_cb_tri_options);
+	DDX_Control(pDX, IDC_LIST3, m_lb_vertex_angles);
+	DDX_Control(pDX, IDC_EDIT7, m_eb_vertex_angles);
+	DDX_Control(pDX, IDC_BUTTON2, m_btn_randomize_angles);
 }
 
 BEGIN_MESSAGE_MAP(CTestSetGeneratorAppDlg, CDialogEx)
@@ -88,6 +93,8 @@ ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST2, &CTestSetGeneratorAppDlg::OnLvnItemchanged
 ON_EN_CHANGE(IDC_EDIT6, &CTestSetGeneratorAppDlg::OnEnChangeEdit6)
 ON_BN_CLICKED(IDC_BUTTON1, &CTestSetGeneratorAppDlg::OnBnClickedButton1)
 ON_CBN_SELCHANGE(IDC_COMBO2, &CTestSetGeneratorAppDlg::OnCbnSelchangeCombo2)
+ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST3, &CTestSetGeneratorAppDlg::OnLvnItemchangedList3)
+ON_EN_CHANGE(IDC_EDIT7, &CTestSetGeneratorAppDlg::OnEnChangeEdit7)
 END_MESSAGE_MAP()
 
 
@@ -117,9 +124,8 @@ BOOL CTestSetGeneratorAppDlg::OnInitDialog()
 		}
 	}
 
-	m_cur_shape_select = -1;
-
-	// TODO: Add extra initialization here
+	// TODO: Add extra initialization here	
+	InitializeMemberVariables();
 	InitSideListViews();
 
 	// Set the icon for this dialog.  The framework does this automatically
@@ -186,6 +192,7 @@ void CTestSetGeneratorAppDlg::OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pRes
 {
 	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 	int row = pNMLV->iItem;
+	HideEditBoxes();
 
 	if (row != m_cur_length_row_select)
 	{
@@ -219,6 +226,7 @@ void CTestSetGeneratorAppDlg::OnLvnItemchangedList2(NMHDR *pNMHDR, LRESULT *pRes
 {
 	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 	int row = pNMLV->iItem;
+	HideEditBoxes();
 
 	if (row != m_cur_thick_row_select)
 	{
@@ -247,6 +255,43 @@ void CTestSetGeneratorAppDlg::OnLvnItemchangedList2(NMHDR *pNMHDR, LRESULT *pRes
 	*pResult = 0;
 }
 
+
+void CTestSetGeneratorAppDlg::OnLvnItemchangedList3(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	if (m_can_edit_angle_measueres)
+	{
+		LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+		int row = pNMLV->iItem;
+		HideEditBoxes();
+
+		if (row != m_cur_angle_row_select)
+		{
+			m_cur_angle_row_select = row;
+			int cur_col_select = m_lb_vertex_angles.GetSelectedColumn();
+
+			CRect lv_rect;
+			m_lb_vertex_angles.GetWindowRect(lv_rect);
+			ScreenToClient(lv_rect);
+			CRect rect;
+			m_lb_vertex_angles.GetItemRect(row, &rect, LVIR_BOUNDS);
+			int left = lv_rect.left + rect.left + 76;
+			int top = lv_rect.top + rect.top;
+			int height = rect.bottom - rect.top;
+
+			CString	text;
+			m_lb_vertex_angles.SetSelectionMark(row);
+			text = m_lb_vertex_angles.GetItemText(row, 1);
+			m_eb_vertex_angles.MoveWindow(left, top, 50, height);
+
+			m_eb_vertex_angles.ShowWindow(SW_SHOW);
+			m_eb_vertex_angles.BringWindowToTop();
+			m_eb_vertex_angles.SetWindowTextW(text);
+			m_eb_vertex_angles.SetFocus();
+		}
+		*pResult = 0;
+	}
+}
+
 void CTestSetGeneratorAppDlg::OnEnChangeEdit1()
 {
 	int item = m_lb_side_lengths.GetSelectionMark();
@@ -271,6 +316,18 @@ void CTestSetGeneratorAppDlg::OnEnChangeEdit6()
 	}
 }
 
+void CTestSetGeneratorAppDlg::OnEnChangeEdit7()
+{
+	int item = m_lb_vertex_angles.GetSelectionMark();
+	CString text;
+	int cur_col_select = m_lb_vertex_angles.GetSelectedColumn();
+	if (item != -1)
+	{
+		GetDlgItemText(IDC_EDIT7, text);
+		m_lb_vertex_angles.SetItemText(item, 1, text);
+	}
+}
+
 void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo()
 {
 	if (m_cur_shape_select != m_cb_shape.GetCurSel())
@@ -281,6 +338,7 @@ void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo()
 		{
 			SetNumSideRows(3);
 			SetNumSideThicknessRows(3);
+			SetNumVertexAngleRows(3);
 			m_cb_quad_options.ShowWindow(SW_HIDE);
 			m_cb_tri_options.ShowWindow(SW_SHOW);
 		}
@@ -288,11 +346,12 @@ void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo()
 		{
 			SetNumSideRows(4);
 			SetNumSideThicknessRows(4);
+			SetNumVertexAngleRows(4);
 			m_cb_quad_options.ShowWindow(SW_SHOW);
 			m_cb_tri_options.ShowWindow(SW_HIDE);
 		}
-		m_eb_side_thickness.SetWindowTextW(L"0");
-		m_eb_side_length.SetWindowTextW(L"0");
+		ResetEditBoxes();
+		HideEditBoxes();
 	}
 }
 
@@ -303,26 +362,41 @@ void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo1()
 	{
 		case Quadrilateral::QT_SQUARE:
 				SetNumSideRows(1);
+				SetNumVertexAngleRows(1);
+				SetCanEditVertexAngles(false);
+				SetVertexAngle(Quadrilateral::SL_AB, 90);
 				break;
 		case Quadrilateral::QT_RECTANGLE:
 				SetNumSideRows(2);
+				SetNumVertexAngleRows(1);
+				SetCanEditVertexAngles(false);
+				SetVertexAngle(Quadrilateral::SL_AB, 90);
 				break;
 		case Quadrilateral::QT_RHOMBUS:
 				SetNumSideRows(1);
+				SetNumVertexAngleRows(2);
+				SetCanEditVertexAngles(true);
 				break;
 		case Quadrilateral::QT_PARALLELOGRAM:
 				SetNumSideRows(2);
+				SetNumVertexAngleRows(2);
+				SetCanEditVertexAngles(true);
 				break;
 		case Quadrilateral::QT_TRAPEZOID:
 				SetNumSideRows(4);
+				SetNumVertexAngleRows(4);
+				SetCanEditVertexAngles(true);
 				break;
 		case Quadrilateral::QT_KITE:
 				SetNumSideRows(4);
-						 //add edit boxes later for angles
+				SetNumVertexAngleRows(3);
+				SetCanEditVertexAngles(true);
 				break;
 
 		default:
 			SetNumSideRows(4);
+			SetNumVertexAngleRows(4);
+			SetCanEditVertexAngles(true);
 	}
 }
 
@@ -333,29 +407,46 @@ void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo2()
 	{
 		case Triangle::TRT_EQUILATERAL:
 			SetNumSideRows(1);
+			SetNumVertexAngleRows(1);
+			SetCanEditVertexAngles(false);
+			SetVertexAngle(Triangle::SL_AB, 60);
 			break;
 		case Triangle::TRT_ISOCELES:
 			SetNumSideRows(2);
+			SetNumVertexAngleRows(2);
+			SetCanEditVertexAngles(true);
 			break;
 		case Triangle::TRT_RIGHT:
 			SetNumSideRows(3);
+			SetNumVertexAngleRows(3);
+			SetCanEditVertexAngles(true);
 			break;
 		case Triangle::TRT_RIGHT_ISOCELES:
 			SetNumSideRows(2);
+			SetNumVertexAngleRows(2);
+			SetCanEditVertexAngles(true);
 			break;
 		case Triangle::TRT_ACUTE:
 			SetNumSideRows(3);
+			SetNumVertexAngleRows(3);
+			SetCanEditVertexAngles(true);
 			break;
 		case Triangle::TRT_OBTUSE:
 			SetNumSideRows(3);
+			SetNumVertexAngleRows(3);
+			SetCanEditVertexAngles(true);
 			break;
 		case Triangle::TRT_SCALENE:
 			SetNumSideRows(3);
+			SetNumVertexAngleRows(3);
+			SetCanEditVertexAngles(true);
 			//add edit boxes later for angles
 			break;
 
 		default:
 			SetNumSideRows(3);
+			SetNumVertexAngleRows(3);
+			SetCanEditVertexAngles(true);
 	}
 }
 
@@ -417,6 +508,16 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 //User defined functions
 /////////////////////////////////////////////////////////////////////////////////////
 //...................................................................................
+void CTestSetGeneratorAppDlg::InitializeMemberVariables(void)
+{
+	SetCurLengthRowSelect(-1);
+	SetCurThickRowSelect(-1);
+	SetCurAngleRowSelect(-1);
+	SetCurShapeSelect(-1);
+	SetCanEditVertexAngles(true);
+}
+
+//...................................................................................
 void CTestSetGeneratorAppDlg::InitSideListViews(void)
 {
 	LVCOLUMN lv_length_col;
@@ -447,8 +548,19 @@ void CTestSetGeneratorAppDlg::InitSideListViews(void)
 	lv_thickness_col.pszText = L"Thickness";
 	m_lb_side_thickness.InsertColumn(1, &lv_thickness_col);
 
-	m_cur_length_row_select = -1;
-	m_cur_thick_row_select = -1;
+	LVCOLUMN lv_angle_col;
+
+	lv_angle_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lv_angle_col.fmt = LVCFMT_LEFT;
+	lv_angle_col.cx = 75;
+	lv_angle_col.pszText = L"Vertex";
+	m_lb_vertex_angles.InsertColumn(0, &lv_angle_col);
+
+	lv_angle_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lv_angle_col.fmt = LVCFMT_LEFT;
+	lv_angle_col.cx = 50;
+	lv_angle_col.pszText = L"Angle";
+	m_lb_vertex_angles.InsertColumn(1, &lv_angle_col);
 }
 
 //...................................................................................
@@ -484,6 +596,25 @@ void CTestSetGeneratorAppDlg::SetNumSideThicknessRows(int num_rows)
 		lv_item_thickness.pszText = (LPWSTR)(item_text.c_str());
 		int item = m_lb_side_thickness.InsertItem(&lv_item_thickness);
 		m_lb_side_thickness.SetItemText(item, 1, L"1");
+	}
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::SetNumVertexAngleRows(int num_rows)
+{
+	m_lb_vertex_angles.DeleteAllItems();
+	for (int i = 0; i < num_rows; i++)
+	{
+		LVITEM lv_item_angle;
+		std::wstring item_text = L"Vertex " + to_wstring(i + 1);
+
+		lv_item_angle.mask = LVIF_TEXT;
+		lv_item_angle.iItem = i;
+		lv_item_angle.iSubItem = 0;
+		lv_item_angle.pszText = (LPWSTR)(item_text.c_str());
+		int item = m_lb_vertex_angles.InsertItem(&lv_item_angle);
+		std::wstring vertex_label = Polygon::VertexLabel(i % 52).c_str();
+		m_lb_vertex_angles.SetItemText(item, 1, vertex_label.c_str());
 	}
 }
 
@@ -581,6 +712,23 @@ int CTestSetGeneratorAppDlg::GetSideThickness(int side_label)
 	}
 
 	return thickness;
+}
+
+//...................................................................................
+float CTestSetGeneratorAppDlg::GetVertexAngle(int vertex_id)
+{
+	float angle = 0.0;
+
+	if (vertex_id < m_lb_vertex_angles.GetItemCount())
+	{
+		angle = (float)StrToInt(m_lb_side_thickness.GetItemText(vertex_id, 1));
+		if (angle < 0.0)
+		{
+			angle = 0.0;
+		}
+	}
+
+	return angle;
 }
 
 //...................................................................................
@@ -721,27 +869,45 @@ bool CTestSetGeneratorAppDlg::GenerateTriangle(SBX::Polygon * poly)
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_ISOCELES)
 		{
-			//tri.InitializeIsoceles(GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC));
+			/*tri.InitializeIsoceles(
+															GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC),
+															GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B)
+														);*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_RIGHT)
 		{
-			//tri.InitializeRight(GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA));
+			/*tri.InitializeRight(
+														GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA),
+														GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
+													);*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_RIGHT_ISOCELES)
 		{
-			//tri.InitializeRightIsoceles(GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC));
+			/*tri.InitializeRightIsoceles(
+																	 GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC),
+																	 GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B)
+																 );*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_ACUTE)
 		{
-			//tri.InitializeAcute(GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA));
+			/*tri.InitializeAcute(
+														GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA), 
+														GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
+													);*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_OBTUSE)
 		{
-			//tri.InitializeObtuse(GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA));
+			tri.InitializeObtuse(
+														GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA), 
+														GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
+													);
 		}
 		else
 		{
-			//tri.InitializeScalene(GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA));
+			/*tri.InitializeScalene(
+														  GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA), 
+														  GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
+												   );*/
 		}
 
 		//
@@ -755,3 +921,32 @@ bool CTestSetGeneratorAppDlg::GenerateTriangle(SBX::Polygon * poly)
 
 	return is_success;
 }
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::ResetEditBoxes(void)
+{
+	m_eb_side_thickness.SetWindowTextW(L"1");
+	m_eb_side_length.SetWindowTextW(L"0");
+	m_eb_vertex_angles.SetWindowTextW(L"0");
+
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::HideEditBoxes(void)
+{
+	m_eb_side_thickness.ShowWindow(SW_HIDE);
+	m_eb_side_length.ShowWindow(SW_HIDE);
+	m_eb_vertex_angles.ShowWindow(SW_HIDE);
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::SetVertexAngle(int vertex_id, int angle)
+{
+	if ( vertex_id < m_lb_vertex_angles.GetItemCount() )
+	{
+		CString angle_str;
+		angle_str.Format(L"%d", angle);
+		m_lb_side_lengths.SetItemText(vertex_id, 1, angle_str);
+	}
+}
+

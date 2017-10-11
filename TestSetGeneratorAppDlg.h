@@ -39,7 +39,9 @@ protected:
 	TestSetGenerator m_generator;
 	int m_cur_length_row_select;
 	int m_cur_thick_row_select;
+	int m_cur_angle_row_select;
 	int m_cur_shape_select;
+	bool m_can_edit_angle_measueres;
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -47,24 +49,40 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP();
-public:
-	CComboBox m_cb_shape;
-	CListCtrl m_lb_side_lengths;
-	afx_msg void OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult);
-	CEdit m_eb_side_length;
-	afx_msg void OnEnChangeEdit1();
 
 protected:  //User defined functions
+
+	//Member Variable Accessors
+	void SetCurLengthRowSelect(int cur_length_row_select) { m_cur_length_row_select = cur_length_row_select; }
+	int    CurLengthRowSelect(void)												{ return m_cur_length_row_select; }
+
+	void SetCurThickRowSelect(int cur_thick_row_select) { m_cur_thick_row_select = cur_thick_row_select; }
+	int    CurThickRowSelect(void)										  { return m_cur_thick_row_select; }
+
+	void SetCurAngleRowSelect(int cur_angle_row_select) { m_cur_angle_row_select = cur_angle_row_select; }
+	int    CurAngleRowSelect(void)											{ return m_cur_angle_row_select; }
+
+	void SetCurShapeSelect(int cur_shape_select) { m_cur_shape_select = cur_shape_select; }
+	int    CurShapeSelect(void)									 { return m_cur_shape_select; }
+
+	void SetCanEditVertexAngles(bool is_can_edit) { m_can_edit_angle_measueres = is_can_edit; }
+	bool    CanEditVertexAngles(void)						  { return m_can_edit_angle_measueres; }
+
+	//Utilities
+	void InitializeMemberVariables(void);
+
 	void InitSideListViews(void);
 	void SetNumSideRows(int num_rows);
 	void SetNumSideThicknessRows(int num_rows);
+	void SetNumVertexAngleRows(int num_rows);
 	void SetOptionsForQuadrilateral(int type);
 
 	bool ValidateSideLengths(void);
 	bool ValidateSideThickness(void);
 
-	int GetSideLength(int side_label);
-	int GetSideThickness(int side_label);
+	int   GetSideLength(int side_label);
+	int   GetSideThickness(int side_label);
+	float GetVertexAngle(int vertex_id);
 
 	int GetPixelWidth(void);
 	int GetPixelHeight(void);
@@ -74,9 +92,18 @@ protected:  //User defined functions
 	bool GenerateQuadrilateral(SBX::Polygon * poly);
 	bool GenerateTriangle(SBX::Polygon * poly);
 
+	void ResetEditBoxes(void);
+	void HideEditBoxes(void);
+
+	void SetVertexAngle(int vertex_id, int angle);
+
 public:
+	CComboBox m_cb_shape;
+	CListCtrl m_lb_side_lengths;
+	afx_msg void OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult);
+	CEdit m_eb_side_length;
+	afx_msg void OnEnChangeEdit1();
 	afx_msg void OnCbnSelchangeCombo();
-//	afx_msg void OnLvnColumnclickList1(NMHDR *pNMHDR, LRESULT *pResult);
 	CComboBox m_cb_quad_options;
 	afx_msg void OnCbnSelchangeCombo1();
 	CButton m_btn_generate;
@@ -92,4 +119,11 @@ public:
 	CStatic m_lbl_progress;
 	CComboBox m_cb_tri_options;
 	afx_msg void OnCbnSelchangeCombo2();
+	CListCtrl m_lb_vertex_angles;
+	CEdit m_eb_vertex_angles;
+	CButton m_btn_randomize_angles;
+	afx_msg void OnLvnItemchangedList3(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnEnChangeEdit7();
+
+
 };

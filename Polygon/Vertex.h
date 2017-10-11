@@ -83,6 +83,7 @@ public:
 
 	float GetAngle(void) const  { return m_angle; }
 	void  SetAngle(float angle) { m_angle = angle; }
+
 };
 
 #endif /* Vertex_H */

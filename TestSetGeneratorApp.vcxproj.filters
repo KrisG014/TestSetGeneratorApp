@@ -53,9 +53,6 @@
     <ClCompile Include="TestSetGeneratorAppDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\dlib\all\source.cpp">
       <Filter>Source Files\dlib</Filter>
     </ClCompile>

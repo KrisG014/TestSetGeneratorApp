@@ -49,52 +49,57 @@ void Quadrilateral::InitializeRectange(int side_ab, int side_bc)
 {
 	m_is_rect = true;
 
-	InitializeParallelogram(side_ab, side_bc);
+	InitializeParallelogram(side_ab, side_bc, 90.0, 90.0);
 }
 
 //...................................................................................
 //Side bc=side da, side ab and side cd are not equal
-void Quadrilateral::InitializeRhombus(int side_ab)
+void Quadrilateral::InitializeRhombus(int side_ab, float vertex_A_angle, float vertex_B_angle)
 {
 	m_is_rhom = true;
 
-	InitializeParallelogram(side_ab, side_ab);
+	InitializeParallelogram(side_ab, side_ab, vertex_A_angle, vertex_B_angle);
 }
 
 //...................................................................................
 //Side bc=side da, side ab and side cd are not equal
-void Quadrilateral::InitializeParallelogram(int side_ab, int side_bc)
+void Quadrilateral::InitializeParallelogram(int side_ab, int side_bc, float vertex_A_angle, float vertex_B_angle)
 {
 	m_is_parallel = true;
 
-	InitializeQuad(side_ab, side_bc, side_ab, side_bc);
+	InitializeQuad(side_ab, side_bc, side_ab, side_bc, vertex_A_angle, vertex_B_angle, vertex_A_angle, vertex_B_angle);
 }
 
 //...................................................................................
 //Side bc=side da, side ab and side cd are not equal
-void Quadrilateral::InitializeTrapezoid(int side_ab, int side_bc, int side_cd, int side_da)
+void Quadrilateral::InitializeTrapezoid(int side_ab, int side_bc, int side_cd, int side_da, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle, float vertex_D_angle)
 {
 	m_is_trap = true;
 	
-	InitializeQuad(side_ab, side_bc, side_cd, side_da);
+	InitializeQuad(side_ab, side_bc, side_cd, side_da, vertex_A_angle, vertex_B_angle, vertex_C_angle, vertex_D_angle);
 }
 
 //...................................................................................
 //Side bc=side da, side ab and side cd are not equal
-void Quadrilateral::InitializeKite(int side_ab, int side_bc)
+void Quadrilateral::InitializeKite(int side_ab, int side_bc, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle)
 {
 	m_is_kite = true;
 
-	InitializeQuad(side_ab, side_bc, side_bc, side_ab);
+	InitializeQuad(side_ab, side_bc, side_bc, side_ab, vertex_A_angle, vertex_B_angle, vertex_C_angle, vertex_B_angle);
 }
 
 //...................................................................................
-void Quadrilateral::InitializeQuad(int side_ab, int side_bc, int side_cd, int side_da)
+void Quadrilateral::InitializeQuad(int side_ab, int side_bc, int side_cd, int side_da, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle, float vertex_D_angle)
 {
 	SetSideLength(SL_AB, side_ab);
 	SetSideLength(SL_BC, side_bc);
 	SetSideLength(SL_CD, side_cd);
 	SetSideLength(SL_DA, side_da);
+
+	SetVertexAngle(Vertex::VI_A, vertex_A_angle);
+	SetVertexAngle(Vertex::VI_B, vertex_B_angle);
+	SetVertexAngle(Vertex::VI_C, vertex_C_angle);
+	SetVertexAngle(Vertex::VI_D, vertex_D_angle);
 
 	CalculateAngles();
 	CalculateSidesAndVertices();
@@ -120,19 +125,20 @@ void Quadrilateral::AnalyzePolygon(void)
 }
 
 //...................................................................................
-void Quadrilateral::CalculateAngles(void)
+bool Quadrilateral::CalculateAngles(void)
 {
-	if (m_is_rect  || m_is_sqr)
+	bool is_success(false);
+
+	if (!m_is_rect  &&  !m_is_sqr)
 	{
-		for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
-		{
-			(*iter).second.SetAngle(90.0);
-		}
+		is_success = Polygon::CalculateAngles();
 	}
-	else
+	else if (m_is_rect  ||  m_is_sqr)
 	{
-		Polygon::CalculateAngles();
+		is_success = true;
 	}
+
+	return is_success;
 }
 
 //...................................................................................
