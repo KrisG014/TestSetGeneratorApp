@@ -51,12 +51,12 @@ MT_ERROR_TYPE Triangle::InitializeRight(int side_ab, int side_bc, int side_ca, f
 }
 
 //...................................................................................
-MT_ERROR_TYPE Triangle::InitializeRightIsoceles(int side_ab, int side_ca, float vertex_A_angle, float vertex_C_angle)
+MT_ERROR_TYPE Triangle::InitializeRightIsoceles(int side_ab, int side_ca)
 {
 	SetIsIsoceles(true);
 	SetIsRight(true);
 
-	return InitializeTri(side_ab, side_ab, side_ca, vertex_A_angle, vertex_A_angle, vertex_C_angle);
+	return InitializeTri(side_ab, side_ab, side_ca, 45.0, 90.0, 45.0);
 }
 
 //...................................................................................
@@ -112,6 +112,26 @@ MT_ERROR_TYPE Triangle::ValidateAngles(void)
 }
 
 //...................................................................................
+bool Triangle::ValidateIsoceles(void)
+{
+	bool is_valid(false);
+
+	float angle_a = VertexAngle(Vertex::VI_A);
+	float angle_b = VertexAngle(Vertex::VI_B);
+	float angle_c = VertexAngle(Vertex::VI_C);
+
+	if (
+			angle_a == angle_b  &&  angle_a != angle_c ||
+			angle_a == angle_c  &&  angle_a != angle_b ||
+			angle_c == angle_b  &&  angle_a != angle_c
+		)
+	{
+		is_valid = true;
+	}
+	return is_valid;
+}
+
+//...................................................................................
 /////////////////////////////////////////////////////////////////////////////////////
 //INHERITED METHODS
 /////////////////////////////////////////////////////////////////////////////////////
@@ -149,6 +169,24 @@ MT_ERROR_TYPE Triangle::CalculateAngles(void)
 	else
 	{
 		error_type = Polygon::CalculateAngles();
+
+		float max_angle = GetMaxAngle();
+		
+		if (error_type == ET_NONE)
+		{
+			if (m_is_obtuse  &&  max_angle <= 90.0  ||  m_is_acute  &&  max_angle >= 90.0)
+			{
+				error_type = ET_INVALID_ANGLE;
+			}
+			if (m_is_scalene  &&  HasEquivalentInteriorAngles()  ||  m_is_iso  &&  !ValidateIsoceles())
+			{
+				error_type = ET_INVALID_ANGLE;
+			}
+			if (m_is_right && !HasAngleValue(90.0))
+			{
+				error_type = ET_INVALID_ANGLE;
+			}
+		}
 	}
 
 	return error_type;
@@ -218,4 +256,48 @@ MT_QUALIFIERS_CONT Triangle::GetQualifiers(void)
 	}
 
 	return m_qualifiers_cont;
+}
+
+//...................................................................................
+/////////////////////////////////////////////////////////////////////////////////////
+//STATIC METHODS
+/////////////////////////////////////////////////////////////////////////////////////
+//...................................................................................
+MT_ANGLES_CONT Triangle::RandomizeAngles(int shape_option)
+{
+	MT_ANGLES_CONT angles_cont = { { Vertex::VI_A, 0.0 },{ Vertex::VI_B, 0.0 },{ Vertex::VI_C, 0.0 } };
+
+	if (shape_option == TRT_ISOCELES)
+	{
+		int vertex_id = GetRandomVertexID(2);
+		float angle = GetRandomAcuteAngle();
+		angles_cont[vertex_id] = angle;
+		angles_cont[Vertex::VI_C] = angle;
+		angles_cont[(vertex_id + 1) % 2] = (float)(180 - 2 * angle);
+	}
+	if (shape_option == TRT_OBTUSE)
+	{
+		int vertex_id = GetRandomVertexID(3);
+		float angle = GetRandomObtuseAngle();
+		angles_cont[vertex_id] = angle;
+		angles_cont = Polygon::RandomizeAngles(angles_cont);
+	}
+	if (shape_option == TRT_RIGHT)
+	{
+		int vertex_id = GetRandomVertexID(3);
+		angles_cont[vertex_id] = 90.0;
+		angles_cont = Polygon::RandomizeAngles(angles_cont);
+	}
+	if (shape_option == TRT_ACUTE)
+	{
+		angles_cont[Vertex::VI_A] = GetRandomAcuteAngle();
+		angles_cont[Vertex::VI_B] = GetRandomAcuteAngle();
+		angles_cont[Vertex::VI_C] = 180.0 - angles_cont[Vertex::VI_A] - angles_cont[Vertex::VI_B];
+	}
+	if (shape_option == TRT_SCALENE)
+	{
+		angles_cont = Polygon::RandomizeAngles(angles_cont);
+	}
+
+	return angles_cont;
 }

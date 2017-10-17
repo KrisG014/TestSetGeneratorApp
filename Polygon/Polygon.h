@@ -20,6 +20,8 @@ typedef std::vector<std::string> MT_QUALIFIERS_CONT;
 
 typedef std::vector<const int*> MT_COORDINATES_CONT;
 
+typedef std::map<int, float> MT_ANGLES_CONT;
+
 typedef int MT_ERROR_TYPE;
 
 enum Quadrants
@@ -35,7 +37,8 @@ enum ErrorTypes
 	ET_NONE = 0,
 	ET_ANGLE_SUM_TOO_HIGH,
 	ET_ANGLE_SUM_TOO_LOW,
-	ET_INVALID_SIDE_LENGTH
+	ET_INVALID_SIDE_LENGTH,
+	ET_INVALID_ANGLE
 };
 
 namespace SBX
@@ -81,10 +84,12 @@ namespace SBX
 		void   SetVertex(Vertex vertex, int vertex_id);
 		void   SetVertex(int vertex_id, int x, int y, float angle = 90.0);
 		void   SetVertexAngle(int vertex_id, float angle);
+		float     VertexAngle(int vertex_id);
 		void   SetRotationVertex(int vertex_id, int x, int y, float angle = 90.0);
 		Vertex GetVertex(int vertex_id) const;
 
 		bool HasVertex(int vertex_id);
+		bool HasAngleValue(float angle);
 		void ValidateVertex(int vertex_id);
 
 		Vertex GetNextVertex(int vertex_id) const;
@@ -92,6 +97,9 @@ namespace SBX
 		int GetLastVertexID(void) const;
 
 		MT_VERTICES_CONT GetVerticesCont(void) const;
+		MT_ANGLES_CONT GetAnglesCont(void);
+
+		void AssignAnglesContToVertices(MT_ANGLES_CONT angles_cont);
 
 		//Side Methods
 		void InitializeSide(int side_label);
@@ -140,7 +148,10 @@ namespace SBX
 		int GetRoughCenterX(void);
 		int GetRoughCenterY(void);   
 
-		int GetMaxThickness(void);
+		int   GetMaxThickness(void);
+		float GetMaxAngle(void);
+
+		bool HasEquivalentInteriorAngles(void);
 
 		std::string GetDimensionsStr(void);
 		std::string GetSideThicknessStr(void);
@@ -152,6 +163,10 @@ namespace SBX
 
 		Side GetPreviousSide(int cur_side);
 		Side GetNextSide(int cur_side);
+
+		MT_ERROR_TYPE ValidateInteriorAngles(void);
+
+		float GetTotalInteriorAngleMeasure(void);
 
 		//Static operations on quadrilateral objects
 		static int      GetVertexXCoord(Vertex vertex);
@@ -184,6 +199,14 @@ namespace SBX
 		static bool CompareSlopes(double slope_1, double slope_2);
 
 		static wstring VertexLabel(int vertex_id);
+
+		static int GetRandomVertexID(int num_vertices);
+		static float GetRandomObtuseAngle(void);
+		//static float GetRandomObtuseAngle(int m_num_vertices, float total_interior_angle_sum);
+		static float GetRandomAcuteAngle(void);
+		static float GetRandomAngleUnder180(void);
+
+		static MT_ANGLES_CONT RandomizeAngles(MT_ANGLES_CONT angles_cont);
 
 	protected:
 		//Operators

@@ -8,6 +8,7 @@
 #include "afxdialogex.h"
 
 #include <cstringt.h>
+#include <utility>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -95,6 +96,7 @@ ON_BN_CLICKED(IDC_BUTTON1, &CTestSetGeneratorAppDlg::OnBnClickedButton1)
 ON_CBN_SELCHANGE(IDC_COMBO2, &CTestSetGeneratorAppDlg::OnCbnSelchangeCombo2)
 ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST3, &CTestSetGeneratorAppDlg::OnLvnItemchangedList3)
 ON_EN_CHANGE(IDC_EDIT7, &CTestSetGeneratorAppDlg::OnEnChangeEdit7)
+ON_BN_CLICKED(IDC_BUTTON2, &CTestSetGeneratorAppDlg::OnBnClickedButton2)
 END_MESSAGE_MAP()
 
 
@@ -464,7 +466,7 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 	}
 
 	/*DEBUGGING*/
-/*	is_polygon_gen_success = true;*/
+	/*is_polygon_gen_success = true;*/
 	/*DEBUGGING*/
 	
 	if (is_polygon_gen_success)
@@ -477,16 +479,16 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 		tri.SetSideThickness(Triangle::SL_AB, 100);
 		tri.SetSideThickness(Triangle::SL_BC, 1);
 		tri.SetSideThickness(Triangle::SL_CA, 1);
-		*poly = *(tri.ReturnSelfAsPolygon());		
+		*poly = *(tri.ReturnSelfAsPolygon());	
 		Quadrilateral quad;
-		quad.InitializeSquare(300);
-		quad.SetSideThickness(Quadrilateral::SL_AB, 10);
-		quad.SetSideThickness(Quadrilateral::SL_BC, 75);
+		quad.InitializeSquare(700);
+		quad.SetSideThickness(Quadrilateral::SL_AB, 50);
+		quad.SetSideThickness(Quadrilateral::SL_BC, 50);
 		quad.SetSideThickness(Quadrilateral::SL_CD, 50);
-		quad.SetSideThickness(Quadrilateral::SL_DA, 150);
-		*poly = *(quad.ReturnSelfAsPolygon());*/
-		/*m_generator.SetNumXPixels(600);
-		m_generator.SetNumYPixels(600);
+		quad.SetSideThickness(Quadrilateral::SL_DA, 50);
+		*poly = *(quad.ReturnSelfAsPolygon());	*/
+		/*m_generator.SetNumXPixels(1100);
+		m_generator.SetNumYPixels(1100);
 		m_generator.SetRotationRange(360);
 		m_generator.SetRotationIncrement(1);*/
 		/*DEBUGGING*/
@@ -500,7 +502,67 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 	}
 
 	delete poly;
+
 	m_lbl_progress.SetWindowTextW(L"Polygons Generated!");
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::OnBnClickedButton2()
+{
+	MT_ANGLES_CONT angles_cont;
+
+	if (m_cb_shape.GetCurSel() == SL_QUADRILATERAL)
+	{
+		switch (m_cb_quad_options.GetCurSel())
+		{
+			case Quadrilateral::QT_RHOMBUS:
+				angles_cont = Quadrilateral::RandomizeAngles(Quadrilateral::QT_RHOMBUS);
+				break;
+			case Quadrilateral::QT_PARALLELOGRAM:
+				angles_cont = Quadrilateral::RandomizeAngles(Quadrilateral::QT_PARALLELOGRAM);
+				break;
+			case Quadrilateral::QT_TRAPEZOID:
+				angles_cont = Quadrilateral::RandomizeAngles(Quadrilateral::QT_TRAPEZOID);
+				break;
+			case Quadrilateral::QT_KITE:
+				angles_cont = Quadrilateral::RandomizeAngles(Quadrilateral::QT_KITE);
+				break;
+			case Quadrilateral::QT_NONE:
+				angles_cont = Quadrilateral::RandomizeAngles(Quadrilateral::QT_NONE);
+				break;
+
+			default:
+				break;
+		}
+	}
+	else if (m_cb_shape.GetCurSel() == SL_TRIANGLE)
+	{
+		switch (m_cb_tri_options.GetCurSel())
+		{
+			case Triangle::TRT_ISOCELES:
+				angles_cont = Triangle::RandomizeAngles(Triangle::TRT_ISOCELES);
+				break;
+			case Triangle::TRT_RIGHT:
+				angles_cont = Triangle::RandomizeAngles(Triangle::TRT_RIGHT);
+				break;
+			case Triangle::TRT_ACUTE:
+				angles_cont = Triangle::RandomizeAngles(Triangle::TRT_ACUTE);
+				break;
+			case Triangle::TRT_OBTUSE:
+				angles_cont = Triangle::RandomizeAngles(Triangle::TRT_OBTUSE);
+				break;
+			case Triangle::TRT_SCALENE:
+				angles_cont = Triangle::RandomizeAngles(Triangle::TRT_SCALENE);
+				break;
+
+			default:
+				break;
+		}
+	}
+	if (!angles_cont.empty())
+	{
+		FillVertexAnglesFromAnglesCont(angles_cont);
+	}
 }
 
 //...................................................................................
@@ -515,6 +577,33 @@ void CTestSetGeneratorAppDlg::InitializeMemberVariables(void)
 	SetCurAngleRowSelect(-1);
 	SetCurShapeSelect(-1);
 	SetCanEditVertexAngles(true);
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::HandleError(int error_type)
+{
+	std::wstring error_message;
+	switch (error_type)
+	{
+	case ET_ANGLE_SUM_TOO_HIGH:
+		error_message = L"Sum of Angles is too high.  You should fix that.";
+		break;
+	case ET_ANGLE_SUM_TOO_LOW:
+		error_message = L"Sum of Angles is too low.  You should fix that.";
+		break;
+	case ET_INVALID_SIDE_LENGTH:
+		error_message = L"These side lengths don't add up.  Fix that and try again.";
+		break;
+	case ET_INVALID_ANGLE:
+		error_message = L"At least one angle doesn't jive with the shape type.  Fix it.";
+		break;
+
+	default:
+		error_message = L"Generic Error Message.  Get the Dev to fix it";
+		break;
+	
+	}
+	MessageBox(error_message.c_str(), L"Unable to Generate Shapes", MB_ICONWARNING | MB_OK);
 }
 
 //...................................................................................
@@ -802,37 +891,38 @@ int CTestSetGeneratorAppDlg::GetRotationIncrement(void)
 //...................................................................................
 bool CTestSetGeneratorAppDlg::GenerateQuadrilateral(SBX::Polygon * poly)
 {
-	bool is_success(false);
+	bool is_success = false;
 
-	Quadrilateral quad;
-	if (ValidateSideLengths())
+	Quadrilateral * quad = new Quadrilateral;
+
+	if (true)//ValidateSideLengths())
 	{
 		if (m_cb_quad_options.GetCurSel() == Quadrilateral::QT_SQUARE)
 		{
-			quad.InitializeSquare(GetSideLength(Quadrilateral::SL_AB));
+			quad->InitializeSquare(GetSideLength(Quadrilateral::SL_AB));
 		}
 		if (m_cb_quad_options.GetCurSel() == Quadrilateral::QT_RECTANGLE)
 		{
-			quad.InitializeRectange(GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC));
+			quad->InitializeRectange(GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC));
 		}
 		if (m_cb_quad_options.GetCurSel() == Quadrilateral::QT_RHOMBUS)
 		{
-			//quad.InitializeRhombus(GetSideLength(Quadrilateral::SL_AB));
+			//quad->InitializeRhombus(GetSideLength(Quadrilateral::SL_AB));
 		}
 		if (m_cb_quad_options.GetCurSel() == Quadrilateral::QT_PARALLELOGRAM)
 		{
-			//quad.InitializeParallelogram(GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC));
+			//quad->InitializeParallelogram(GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC));
 		}
 		if (m_cb_quad_options.GetCurSel() == Quadrilateral::QT_TRAPEZOID)
 		{
-			/*quad.InitializeTrapezoid(
+			/*quad->InitializeTrapezoid(
 																	GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC)
 																	GetSideLength(Quadrilateral::SL_CD), GetSideLength(Quadrilateral::SL_DA)
 																);*/
 		}
 		if (m_cb_quad_options.GetCurSel() == Quadrilateral::QT_KITE)
 		{
-			//quad.InitializeKite(GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC));
+			//quad->InitializeKite(GetSideLength(Quadrilateral::SL_AB), GetSideLength(Quadrilateral::SL_BC));
 		}
 		else
 		{
@@ -842,13 +932,13 @@ bool CTestSetGeneratorAppDlg::GenerateQuadrilateral(SBX::Polygon * poly)
 			quad.SetSideLength(Quadrilateral::SL_DA, GetSideLength(Quadrilateral::SL_DA));*/
 		}
 
-		//
-		quad.SetSideThickness(Quadrilateral::SL_AB, GetSideThickness(Quadrilateral::SL_AB));
-		quad.SetSideThickness(Quadrilateral::SL_BC, GetSideThickness(Quadrilateral::SL_BC));
-		quad.SetSideThickness(Quadrilateral::SL_CD, GetSideThickness(Quadrilateral::SL_CD));
-		quad.SetSideThickness(Quadrilateral::SL_DA, GetSideThickness(Quadrilateral::SL_DA));
-
-		*poly = quad;
+		
+		quad->SetSideThickness(Quadrilateral::SL_AB, GetSideThickness(Quadrilateral::SL_AB));
+		quad->SetSideThickness(Quadrilateral::SL_BC, GetSideThickness(Quadrilateral::SL_BC));
+		quad->SetSideThickness(Quadrilateral::SL_CD, GetSideThickness(Quadrilateral::SL_CD));
+		quad->SetSideThickness(Quadrilateral::SL_DA, GetSideThickness(Quadrilateral::SL_DA));
+		
+		*poly = *(quad->ReturnSelfAsPolygon());
 		is_success = true;
 	}
 
@@ -859,48 +949,50 @@ bool CTestSetGeneratorAppDlg::GenerateQuadrilateral(SBX::Polygon * poly)
 bool CTestSetGeneratorAppDlg::GenerateTriangle(SBX::Polygon * poly)
 {
 	bool is_success(false);
+	MT_ERROR_TYPE error_type(ET_NONE);
 
 	Triangle tri;
 	if (ValidateSideLengths())
 	{
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_EQUILATERAL)
 		{
-			tri.InitializeEquilateral(GetSideLength(Quadrilateral::SL_AB));
+			error_type = tri.InitializeEquilateral(GetSideLength(Quadrilateral::SL_AB));
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_ISOCELES)
 		{
-			/*tri.InitializeIsoceles(
+			
+			/*error_type = tri.InitializeIsoceles(
 															GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC),
 															GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B)
 														);*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_RIGHT)
 		{
-			/*tri.InitializeRight(
+			/*error_type = tri.InitializeRight(
 														GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA),
 														GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
 													);*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_RIGHT_ISOCELES)
 		{
-			/*tri.InitializeRightIsoceles(
+			/*error_type = tri.InitializeRightIsoceles(
 																	 GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC),
 																	 GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B)
 																 );*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_ACUTE)
 		{
-			/*tri.InitializeAcute(
+			/*error_type = tri.InitializeAcute(
 														GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA), 
 														GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
 													);*/
 		}
 		if (m_cb_tri_options.GetCurSel() == Triangle::TRT_OBTUSE)
 		{
-			tri.InitializeObtuse(
-														GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA), 
-														GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
-													);
+			error_type = tri.InitializeObtuse(
+																				 GetSideLength(Triangle::SL_AB), GetSideLength(Triangle::SL_BC), GetSideLength(Triangle::SL_CA), 
+																				 GetVertexAngle(Vertex::VI_A), GetVertexAngle(Vertex::VI_B), GetVertexAngle(Vertex::VI_C)
+																			 );
 		}
 		else
 		{
@@ -910,13 +1002,19 @@ bool CTestSetGeneratorAppDlg::GenerateTriangle(SBX::Polygon * poly)
 												   );*/
 		}
 
-		//
 		tri.SetSideThickness(Triangle::SL_AB, GetSideThickness(Triangle::SL_AB));
 		tri.SetSideThickness(Triangle::SL_BC, GetSideThickness(Triangle::SL_BC));
 		tri.SetSideThickness(Triangle::SL_CA, GetSideThickness(Triangle::SL_CA));
 
-		*poly = tri;
-		is_success = true;
+		if (error_type != ET_NONE)
+		{
+			HandleError(error_type);
+		}
+		else
+		{
+			*poly = tri;
+			is_success = true;
+		}
 	}
 
 	return is_success;
@@ -950,3 +1048,16 @@ void CTestSetGeneratorAppDlg::SetVertexAngle(int vertex_id, int angle)
 	}
 }
 
+//...................................................................................
+void CTestSetGeneratorAppDlg::FillVertexAnglesFromAnglesCont(MT_ANGLES_CONT angles_cont)
+{
+	int num_angles = angles_cont.size();
+	SetNumVertexAngleRows(num_angles);
+
+	for (int i = 0; i < num_angles; i++)
+	{
+		m_lb_vertex_angles.SetItemText(i, 1, to_wstring(angles_cont[i]).c_str());
+	}
+}
+
+//...................................................................................

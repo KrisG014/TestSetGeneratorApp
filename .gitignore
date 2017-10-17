@@ -1,0 +1,9 @@
+
+*.obj
+*.log
+*.pch
+*.res
+x64/Release/TestSetG.1AFD25EB.tlog/TestSetGeneratorApp.lastbuildstate
+*.tlog
+*.idb
+*.pdb

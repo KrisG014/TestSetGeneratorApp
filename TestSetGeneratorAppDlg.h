@@ -70,7 +70,9 @@ protected:  //User defined functions
 
 	//Utilities
 	void InitializeMemberVariables(void);
-
+	
+	void HandleError(int error_type);
+	
 	void InitSideListViews(void);
 	void SetNumSideRows(int num_rows);
 	void SetNumSideThicknessRows(int num_rows);
@@ -96,6 +98,7 @@ protected:  //User defined functions
 	void HideEditBoxes(void);
 
 	void SetVertexAngle(int vertex_id, int angle);
+	void FillVertexAnglesFromAnglesCont(MT_ANGLES_CONT angles_cont);
 
 public:
 	CComboBox m_cb_shape;
@@ -126,4 +129,5 @@ public:
 	afx_msg void OnEnChangeEdit7();
 
 
+	afx_msg void OnBnClickedButton2();
 };

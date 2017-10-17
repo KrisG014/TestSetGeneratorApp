@@ -8,6 +8,9 @@
 #include "Constants.h"
 #include "TestSetGenerator.h"
 #include <algorithm>
+#include <time.h>
+#include <iostream>
+#include <iomanip>
 
 using namespace std;
 using namespace boost;
@@ -48,6 +51,9 @@ TestSetGenerator::TestSetGenerator(void)
 	m_cleanup_color_override = true;
 	m_cleanup_turn_all_colors_on = false ;
 	m_shade_turn_all_colors_off = true;
+
+	ResetAnalytics();
+
 }
 
 //...................................................................................
@@ -70,36 +76,34 @@ void TestSetGenerator::TestGenerator(void)
 bool TestSetGenerator::DrawShape(SBX::Polygon poly, array2d<rgb_pixel> & image, rgb_pixel color)
 {
 	bool is_success = false;
-	if (poly.GetMaxX() < GetNumXPixels()  &&  poly.GetMaxY() < GetNumYPixels())
-	if (poly.ValidateSidesCont())
+	if (poly.GetMaxX() < GetNumXPixels() && poly.GetMaxY() < GetNumYPixels())
 	{
 		MT_SIDES_CONT sides_cont = poly.GetSidesCont();
 		if (!sides_cont.empty())
 		{
 			for (MT_SIDES_CONT::iterator it = sides_cont.begin(); it != sides_cont.end(); it++)
 			{
-				if (Polygon::IsValidSide((*it).second))
+				//if (((*it).first) % 2 == 1)
+				//{
+				is_success = DrawSide((*it).second, image, color);
+				//}
+				if (!is_success)
 				{
-					//if (((*it).first) % 2 == 1)
-					//{
-					DrawSide((*it).second, image, color);
-					is_success = true;
-					//}
-				}
-				else
-				{
-					is_success = false;
 					break;
 				}
 			}
 		}
 	}
+
 	return is_success;
 }
 
 //...................................................................................
 void TestSetGenerator::ShadeShape(array2d<rgb_pixel> & image, SBX::Polygon poly)
 {
+	time_t shade_shape_timer;
+	time(&shade_shape_timer);
+
 	int num_sides = poly.GetNumSides();
 
 	for (int i = 0; i < num_sides; i++)
@@ -251,11 +255,17 @@ void TestSetGenerator::ShadeShape(array2d<rgb_pixel> & image, SBX::Polygon poly)
 			}
 		}
 	}
+	RecordAnalytics(shade_shape_timer, ASR_SHADE_SHAPE);
 }
 
 //...................................................................................
-void TestSetGenerator::DrawSide(Side side, array2d<rgb_pixel> & image, rgb_pixel color)
+bool TestSetGenerator::DrawSide(Side side, array2d<rgb_pixel> & image, rgb_pixel color)
 {
+	time_t draw_shape_timer;
+	time(&draw_shape_timer);
+
+	bool is_success(false);
+
 	if (Polygon::IsValidSide(side))
 	{
 		Vertex starting_vertex = Polygon::GetSideStartingVertex(side);
@@ -284,48 +294,56 @@ void TestSetGenerator::DrawSide(Side side, array2d<rgb_pixel> & image, rgb_pixel
 					draw_line(starting_vertex.GetX(), starting_vertex.GetY() - i*shade, ending_vertex.GetX(), ending_vertex.GetY() - i*shade, image, color);
 				}
 			}
+			is_success = true;
 		}
 	}
+
+	RecordAnalytics(draw_shape_timer, ASR_DRAWSHAPE);
+	return is_success;
 }
 //...................................................................................
 void TestSetGenerator::OutlineShape(SBX::Polygon poly, array2d<rgb_pixel> & image)
 {
+	time_t outline_shape_timer;
+	time(&outline_shape_timer);
+
 	MT_SIDES_CONT sides_cont = poly.GetSidesCont();
 	if (!sides_cont.empty())
 	{
 		for (MT_SIDES_CONT::iterator iter = sides_cont.begin(); iter != sides_cont.end(); iter++)
 		{
 			Side side = (*iter).second;
-			if (Polygon::IsValidSide(side))
-			{
-				//Thankfully, not error is thrown if drawing is attempted outside of the number of pixels, so no need to check the bounds.  Hooray!
-				int shade = Polygon::IsSideShadeUp(side) ? 1 : -1;
-				Vertex starting_vertex = Quadrilateral::GetSideStartingVertex(side);
-				Vertex ending_vertex = Quadrilateral::GetSideEndingVertex(side);
-				bool is_vertical = starting_vertex.GetX() - ending_vertex.GetX() == 0;
-				bool is_horizontal = starting_vertex.GetY() - ending_vertex.GetY() == 0;
+			//Thankfully, not error is thrown if drawing is attempted outside of the number of pixels, so no need to check the bounds.  Hooray!
+			int shade = Polygon::IsSideShadeUp(side) ? 1 : -1;
+			Vertex starting_vertex = Quadrilateral::GetSideStartingVertex(side);
+			Vertex ending_vertex = Quadrilateral::GetSideEndingVertex(side);
+			bool is_vertical = starting_vertex.GetX() - ending_vertex.GetX() == 0;
+			bool is_horizontal = starting_vertex.GetY() - ending_vertex.GetY() == 0;
 
-				if (is_vertical || side.GetSlope() < -1)
-				{
-					draw_line(starting_vertex.GetX() + shade, starting_vertex.GetY(), ending_vertex.GetX() + shade, ending_vertex.GetY(), image, WHITE);
-				}
-				else if (side.GetSlope() > 1)
-				{
-					draw_line(starting_vertex.GetX() - shade, starting_vertex.GetY(), ending_vertex.GetX() - shade, ending_vertex.GetY(), image, WHITE);
-				}
-				else
-				{
-					draw_line(starting_vertex.GetX(), starting_vertex.GetY() + shade, ending_vertex.GetX(), ending_vertex.GetY() + shade, image, WHITE);
-				}
-				draw_line(starting_vertex.GetX(), starting_vertex.GetY(), ending_vertex.GetX(), ending_vertex.GetY(), image, BLACK);
+			if (is_vertical || side.GetSlope() < -1)
+			{
+				draw_line(starting_vertex.GetX() + shade, starting_vertex.GetY(), ending_vertex.GetX() + shade, ending_vertex.GetY(), image, WHITE);
+			}
+			else if (side.GetSlope() > 1)
+			{
+				draw_line(starting_vertex.GetX() - shade, starting_vertex.GetY(), ending_vertex.GetX() - shade, ending_vertex.GetY(), image, WHITE);
+			}
+			else
+			{
+				draw_line(starting_vertex.GetX(), starting_vertex.GetY() + shade, ending_vertex.GetX(), ending_vertex.GetY() + shade, image, WHITE);
 			}
 		}
 	}
+
+	RecordAnalytics(outline_shape_timer, ASR_OUTLINE_SHAPE);
 }
 
 //...................................................................................
 void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon poly)
 {
+	time_t cleanup_image_timer;
+	time(&cleanup_image_timer);
+
 	bool color_override(false);
 	bool turn_all_colors_on(true);
 
@@ -573,6 +591,8 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 		}
 	}
 
+	RecordAnalytics(cleanup_image_timer, ASR_CLEANUP_SHAPE);
+
 	OutlineShape(poly, image);
 }
 
@@ -636,50 +656,89 @@ void TestSetGenerator::GenerateTestSet(void)
 	boost::lock_guard<boost::recursive_mutex> lock(m_guard);
 	try
 	{
-		long num_x_pixels = GetNumXPixels();
-		long num_y_pixels = GetNumYPixels();
+		ResetAnalytics();
 
-		long x_max = num_x_pixels - (long)(m_poly).GetMaxX();
-		long y_max = num_y_pixels - (long)(m_poly).GetMaxY();
-
-		PolygonDetails poly_details = GetPolygonDetails((m_poly));
-		std::string file_path = GenerateFilePath();
-		VerifyFilePath(file_path + "ALL/");
-		int counter = 1;
-		int x_stop = 15;
-		for (int angle = 0; angle < m_rotation_range; angle+= m_rotation_incrememnt)
+		if (m_poly.ValidateSidesCont())
 		{
-			if (angle == x_stop)
+			long num_x_pixels = GetNumXPixels();
+			long num_y_pixels = GetNumYPixels();
+
+			long x_max = num_x_pixels - (long)(m_poly).GetMaxX();
+			long y_max = num_y_pixels - (long)(m_poly).GetMaxY();
+
+			PolygonDetails poly_details = GetPolygonDetails((m_poly));
+			std::string file_path = GenerateFilePath();
+			VerifyFilePath(file_path + "ALL/");
+			int counter = 1;
+			int x_stop = 15;
+			for (int angle = 0; angle < m_rotation_range; angle += m_rotation_incrememnt)
 			{
-				std::string stop;
-			}
-			int center_x = (m_poly).GetRoughCenterX();  
-			int center_y = (m_poly).GetRoughCenterY();
-			SBX::Polygon rotated_polygon(m_poly);
-			std::pair<long, long> translation = Polygon::Rotate((float)angle, center_x, center_y, &rotated_polygon);
-			rotated_polygon.ConfirmSideLengths();
-			for (long x_trans = translation.first; x_trans < x_max; x_trans++)
-			{
-				for (long y_trans = translation.second; y_trans < y_max; y_trans++)
+				if (angle == x_stop)
 				{
-					//long x_trans = 100;
-					//long y_trans = 100;
-					SBX::Polygon translated_polygon(rotated_polygon);
-					Polygon::Translate(x_trans, y_trans, &translated_polygon);
-					array2d<rgb_pixel> temp_img(num_y_pixels, num_x_pixels);
-					assign_all_pixels(temp_img, WHITE);
-					if (DrawShape(translated_polygon, temp_img, BLACK))
-					{
-						CleanupImage(temp_img, translated_polygon);
-						ShadeShape(temp_img, translated_polygon);
-						std::string temp_file_path = file_path + to_string(x_trans) + "x" + to_string(y_trans) + "/";
-						VerifyFilePath(temp_file_path, false);
-						save_png(temp_img, temp_file_path + GenerateFileName(poly_details, counter, x_trans, y_trans, angle));
-						save_png(temp_img, file_path + "ALL/" + GenerateFileName(poly_details, counter, x_trans, y_trans, angle));
-						counter++;
-					}
+					std::string stop;
+				}
+				int center_x = (m_poly).GetRoughCenterX();
+				int center_y = (m_poly).GetRoughCenterY();
+
+				time_t rotate_polygon_timer;
+				time(&rotate_polygon_timer);
+
+				SBX::Polygon rotated_polygon(m_poly);
+				std::pair<long, long> translation = Polygon::Rotate((float)angle, center_x, center_y, &rotated_polygon);
+				rotated_polygon.ConfirmSideLengths();
+
+				RecordAnalytics(rotate_polygon_timer, ASR_ROTATE_SHAPE);
+				//add stuff to draw the rotated polygon!
+			  //for (long x_trans = translation.first; x_trans < x_max; x_trans++)
+				//{
+				//	for (long y_trans = translation.second; y_trans < y_max; y_trans++)
+			//		{
+						long x_trans = 100;
+						long y_trans = 100;
+						time_t translate_polygon_timer;
+						time(&translate_polygon_timer);
+
+						//DrawTranslateShape(original_image, rotated_polygon,)
+
+						SBX::Polygon translated_polygon(rotated_polygon);
+						Polygon::Translate(x_trans, y_trans, &translated_polygon);
+
+						array2d<rgb_pixel> temp_img(num_y_pixels, num_x_pixels);
+						assign_all_pixels(temp_img, WHITE);
+
+						if (DrawShape(translated_polygon, temp_img, BLACK))
+						{
+							time_t shade_and_cleanup_timer;
+							time(&shade_and_cleanup_timer);
+
+							CleanupImage(temp_img, translated_polygon);
+							ShadeShape(temp_img, translated_polygon);
+
+							RecordAnalytics(shade_and_cleanup_timer, ASR_SHADE_AND_CLEANUP);
+
+							time_t shape_finaliztion_timer;
+							time(&shape_finaliztion_timer);
+
+							//std::string temp_file_path = file_path + to_string(x_trans) + "x" + to_string(y_trans) + "/";
+							//VerifyFilePath(temp_file_path, false);
+
+							time_t save_png_timer;
+							time(&save_png_timer);
+
+							//save_png(temp_img, temp_file_path + GenerateFileName(poly_details, counter, x_trans, y_trans, angle));
+							save_png(temp_img, file_path + "ALL/" + GenerateFileName(poly_details, counter, x_trans, y_trans, angle));
+
+							RecordAnalytics(save_png_timer, ASR_SAVE_PNG);
+
+							counter++;
+
+							RecordAnalytics(shape_finaliztion_timer, ASR_SHAPE_FINALIZATION);
+							RecordAnalytics(translate_polygon_timer, ASR_TRANSLATE_SHAPE);
+					//	}
+				//	}
 				}
 			}
+			OutputAnalytics();
 		}
 	}
 	catch (std::exception& e)
@@ -721,6 +780,9 @@ std::string TestSetGenerator::GenerateFilePath(void)
 //...................................................................................
 bool TestSetGenerator::VerifyFilePath(const std::string & file_path, bool clear_dir)
 {
+	time_t verify_filepath_timer;
+	time(&verify_filepath_timer);
+
 	bool is_success(false);
 
 	bool does_folder_exist = boost::filesystem::exists(file_path);
@@ -731,6 +793,8 @@ bool TestSetGenerator::VerifyFilePath(const std::string & file_path, bool clear_
 
 	is_success = boost::filesystem::create_directories(file_path);
 	
+	RecordAnalytics(verify_filepath_timer, ASR_VERIFY_FILE_PATH);
+
 	return is_success;
 }
 
@@ -743,6 +807,12 @@ void TestSetGenerator::ClearDirectory(const std::string & file_path)
 	{
 		boost::filesystem::remove_all(file_path);
 	}
+}
+
+//...................................................................................
+void TestSetGenerator::DrawTranslateShape(const std::string & file_path)
+{
+	//we'll eventually get this shit done
 }
 
 //...................................................................................
@@ -1031,3 +1101,164 @@ int TestSetGenerator::GetXCoord(Side side, int y, int shade, bool is_ceil, bool 
 
 	return (int)x_coord;
 }
+
+//...................................................................................
+void TestSetGenerator::RecordAnalytics(time_t start, int subroutine_id)
+{
+	time_t now;
+	double seconds = abs(difftime(start, time(&now)));
+	m_analytics_array[subroutine_id].second++;
+	m_analytics_array[subroutine_id].first += seconds;
+	m_analytics_counter++;
+	m_analytics_total_counter++;
+	if (m_analytics_counter == 1000)
+	{
+		OutputAnalytics();
+	}
+}
+
+//...................................................................................
+double TestSetGenerator::GetAnalyticAverage(int subroutine_id)
+{
+	double avg = -1.0;
+
+	int num_times = m_analytics_array[subroutine_id].second;
+	if (num_times > 0)
+	{
+		avg = m_analytics_array[subroutine_id].first / num_times;
+	}
+
+	return avg;
+}
+
+//...................................................................................
+void TestSetGenerator::OutputAnalytics(void)
+{
+	ofstream analytics_file;
+	analytics_file.open(FILEPATH + "analytics.txt", ios::out | ios::app);
+	if (m_analytics_total_counter == 1000)
+	{
+		analytics_file << "Analytics for polygon: " << m_poly.GetPolygonType() << "   with Dim: "  << m_poly.GetDimensionsStr()  <<  "   and Thickness: " << m_poly.GetSideThicknessStr() <<"\n";
+	}
+	analytics_file << "Average Times After " << m_analytics_total_counter << " Iterations\n";
+	analytics_file <<	"--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n";
+	analytics_file << " Rotate Shape  ||  Translate Shape  ||  Draw Shape  ||  Cleanup Shape  ||  Outline Shape  ||  Shade Shape  ||  Shade + Cleanup  ||  Finalize Shape  ||  Verify FilePath  ||  Save PNG\n";
+	analytics_file << "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n";
+	analytics_file << std::setprecision(7) << std::fixed;
+	analytics_file << "   " << GetAnalyticAverage(ASR_ROTATE_SHAPE) << "            " << GetAnalyticAverage(ASR_TRANSLATE_SHAPE);
+	analytics_file << "         " << GetAnalyticAverage(ASR_DRAWSHAPE) << "         " << GetAnalyticAverage(ASR_CLEANUP_SHAPE);
+	analytics_file << "           " << GetAnalyticAverage(ASR_OUTLINE_SHAPE) << "           " << GetAnalyticAverage(ASR_SHADE_SHAPE);
+	analytics_file << "      " << GetAnalyticAverage(ASR_SHADE_AND_CLEANUP) << "          " << GetAnalyticAverage(ASR_SHAPE_FINALIZATION);// << "     \n\n\n";
+	analytics_file << "            " << GetAnalyticAverage(ASR_VERIFY_FILE_PATH) << "            " << GetAnalyticAverage(ASR_SAVE_PNG) << "     \n\n\n";
+	analytics_file.close();
+	m_analytics_counter = 0;
+}
+
+//...................................................................................
+void TestSetGenerator::ResetAnalytics(void)
+{
+	m_analytics_counter = 0;
+	m_analytics_total_counter = 0;
+	std::pair <double, int> init(0.0, 0);
+	std::fill(m_analytics_array, m_analytics_array + 10, init);
+}
+
+
+/*
+//...................................................................................
+void TestSetGenerator::GenerateTestSet(void)
+{
+	boost::lock_guard<boost::recursive_mutex> lock(m_guard);
+	try
+	{
+		ResetAnalytics();
+
+		if (m_poly.ValidateSidesCont())
+		{
+			long num_x_pixels = GetNumXPixels();
+			long num_y_pixels = GetNumYPixels();
+
+			long x_max = num_x_pixels - (long)(m_poly).GetMaxX();
+			long y_max = num_y_pixels - (long)(m_poly).GetMaxY();
+
+			PolygonDetails poly_details = GetPolygonDetails((m_poly));
+			std::string file_path = GenerateFilePath();
+			VerifyFilePath(file_path + "ALL/");
+			int counter = 1;
+			int x_stop = 15;
+			for (int angle = 0; angle < m_rotation_range; angle += m_rotation_incrememnt)
+			{
+				if (angle == x_stop)
+				{
+					std::string stop;
+				}
+				int center_x = (m_poly).GetRoughCenterX();
+				int center_y = (m_poly).GetRoughCenterY();
+
+				time_t rotate_polygon_timer;
+				time(&rotate_polygon_timer);
+
+				SBX::Polygon rotated_polygon(m_poly);
+				std::pair<long, long> translation = Polygon::Rotate((float)angle, center_x, center_y, &rotated_polygon);
+				rotated_polygon.ConfirmSideLengths();
+
+				RecordAnalytics(rotate_polygon_timer, ASR_ROTATE_SHAPE);
+
+				//for (long x_trans = translation.first; x_trans < x_max; x_trans++)
+			//	{
+			//		for (long y_trans = translation.second; y_trans < y_max; y_trans++)
+			//		{
+				long x_trans = 100;
+				long y_trans = 100;
+				time_t translate_polygon_timer;
+				time(&translate_polygon_timer);
+
+				SBX::Polygon translated_polygon(rotated_polygon);
+				Polygon::Translate(x_trans, y_trans, &translated_polygon);
+
+				RecordAnalytics(translate_polygon_timer, ASR_TRANSLATE_SHAPE);
+
+				array2d<rgb_pixel> temp_img(num_y_pixels, num_x_pixels);
+				assign_all_pixels(temp_img, WHITE);
+
+				if (DrawShape(translated_polygon, temp_img, BLACK))
+				{
+					time_t shade_and_cleanup_timer;
+					time(&shade_and_cleanup_timer);
+
+					CleanupImage(temp_img, translated_polygon);
+					ShadeShape(temp_img, translated_polygon);
+
+					RecordAnalytics(shade_and_cleanup_timer, ASR_SHADE_AND_CLEANUP);
+
+					time_t shape_finaliztion_timer;
+					time(&shape_finaliztion_timer);
+
+					std::string temp_file_path = file_path + to_string(x_trans) + "x" + to_string(y_trans) + "/";
+					VerifyFilePath(temp_file_path, false);
+
+					time_t save_png_timer;
+					time(&save_png_timer);
+
+					//save_png(temp_img, temp_file_path + GenerateFileName(poly_details, counter, x_trans, y_trans, angle));
+					save_png(temp_img, file_path + "ALL/" + GenerateFileName(poly_details, counter, x_trans, y_trans, angle));
+
+					RecordAnalytics(save_png_timer, ASR_SAVE_PNG);
+
+					counter++;
+
+					RecordAnalytics(shape_finaliztion_timer, ASR_SHAPE_FINALIZATION);
+				}
+				//}
+			//}
+			}
+			OutputAnalytics();
+		}
+	}
+	catch (std::exception& e)
+	{
+		cout << "exception thrown: " << e.what() << endl;
+	}
+}
+
+*/

@@ -50,17 +50,19 @@ public:
 	void SetIsScalene(bool is_scalene) { m_is_scalene = is_scalene; }
 	bool    IsScalene(void)						 { return m_is_scalene; }
 
-
+	//Triangle Initializers
 	MT_ERROR_TYPE InitializeEquilateral(int side_ab);
 	MT_ERROR_TYPE InitializeIsoceles(int side_ab, int side_ca, float vertex_A_angle, float vertex_C_angle);
 	MT_ERROR_TYPE InitializeRight(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle);
-	MT_ERROR_TYPE InitializeRightIsoceles(int side_ab, int side_ca, float vertex_A_angle, float vertex_C_angle);
+	MT_ERROR_TYPE InitializeRightIsoceles(int side_ab, int side_ca);
 	MT_ERROR_TYPE InitializeAcute(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle);
 	MT_ERROR_TYPE InitializeObtuse(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle);
 	MT_ERROR_TYPE InitializeScalene(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle);
 	MT_ERROR_TYPE InitializeTri(int side_ab, int side_bc, int side_ca, float vertex_A_angle, float vertex_B_angle, float vertex_C_angle);
 
+	//Utilities
 	MT_ERROR_TYPE ValidateAngles(void);
+	bool ValidateIsoceles(void);
 
 	//Inherited methods from Polygon
 	void InitPolygon(void);
@@ -70,6 +72,9 @@ public:
 	std::string GenerateFilePathExtension(void);
 
 	MT_QUALIFIERS_CONT GetQualifiers(void);
+
+	//Static Methods
+	static MT_ANGLES_CONT RandomizeAngles(int shape_option);
 
 private:
 	bool m_is_equil;

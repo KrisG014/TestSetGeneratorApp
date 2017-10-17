@@ -8,10 +8,6 @@ Quadrilateral::Quadrilateral()
 {
 	InitPolygon();
 
-	m_is_sqr = false;
-	m_is_rect = false;
-	m_is_rhom = false;
-
 	SetFirstVertex(0, 0, m_default_angle, false);
 }
 
@@ -23,10 +19,6 @@ Quadrilateral::Quadrilateral(int side_ab, int side_bc, int side_cd, int side_da,
 	SetSideLength(SL_BC, side_bc);
 	SetSideLength(SL_CD, side_cd);
 	SetSideLength(SL_DA, side_da);
-
-	m_is_sqr = false;
-	m_is_rect = false;
-	m_is_rhom = false;
 
 	Vertex vertex(starting_vertex_x_coord, starting_vertex_y_coord, starting_vertex_angle);
 	SetFirstVertex(vertex);
@@ -115,6 +107,14 @@ void Quadrilateral::InitPolygon(void)
 {
 	Polygon::m_num_sides = 4;
 	SetPolygonType(QUADRILATERAL);
+	
+	m_is_sqr = false;
+	m_is_rect = false;
+	m_is_rhom = false;
+	m_is_parallel = false;
+	m_is_trap = false;
+	m_is_kite = false;
+
 	Polygon::InitPolygon();
 }
 
@@ -125,20 +125,16 @@ void Quadrilateral::AnalyzePolygon(void)
 }
 
 //...................................................................................
-bool Quadrilateral::CalculateAngles(void)
+MT_ERROR_TYPE Quadrilateral::CalculateAngles(void)
 {
-	bool is_success(false);
+	MT_ERROR_TYPE error_type(ET_NONE);
 
 	if (!m_is_rect  &&  !m_is_sqr)
 	{
-		is_success = Polygon::CalculateAngles();
-	}
-	else if (m_is_rect  ||  m_is_sqr)
-	{
-		is_success = true;
+		error_type = Polygon::CalculateAngles();
 	}
 
-	return is_success;
+	return error_type;
 }
 
 //...................................................................................
@@ -207,6 +203,41 @@ MT_QUALIFIERS_CONT Quadrilateral::GetQualifiers(void)
 	}
 
 	return m_qualifiers_cont;
+}
+
+//...................................................................................
+/////////////////////////////////////////////////////////////////////////////////////
+//STATIC METHODS
+/////////////////////////////////////////////////////////////////////////////////////
+//...................................................................................
+MT_ANGLES_CONT Quadrilateral::RandomizeAngles(int shape_option)
+{
+	MT_ANGLES_CONT angles_cont = { { Vertex::VI_A, 0.0 },{ Vertex::VI_B, 0.0 },{ Vertex::VI_C, 0.0 },{ Vertex::VI_D, 0.0 } };
+
+	if (shape_option == QT_RHOMBUS || shape_option == QT_PARALLELOGRAM)
+	{
+		int vertex_id = GetRandomVertexID(2);
+		float angle = GetRandomAcuteAngle();
+		float supplementary_angle = 180.0 - angle;
+		angles_cont[vertex_id] = angle;
+		angles_cont[(vertex_id + 1) % 4] = supplementary_angle;
+		angles_cont[(vertex_id + 2) % 4] = angle;
+		angles_cont[(vertex_id + 3) % 4] = supplementary_angle;
+	}
+	if (shape_option == QT_KITE)
+	{
+		int vertex_id = GetRandomVertexID(4);
+		float angle = GetRandomAngleUnder180();
+		angles_cont[vertex_id] = angle;
+		angles_cont[(vertex_id + 2) % 4] = angle;
+		angles_cont = Polygon::RandomizeAngles(angles_cont);
+	}
+	if (shape_option == QT_NONE || shape_option == QT_TRAPEZOID)
+	{
+		angles_cont = Polygon::RandomizeAngles(angles_cont);
+	}
+
+	return angles_cont;
 }
 
 //...................................................................................

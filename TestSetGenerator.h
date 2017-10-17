@@ -34,6 +34,21 @@ struct PolygonDetails
 	MT_QUALIFIERS_CONT qualifiers;
 };
 
+enum AnalyticSubRoutines
+{
+	ASR_DRAWSHAPE = 0,
+	ASR_CLEANUP_SHAPE,
+	ASR_SHADE_SHAPE,
+	ASR_SHAPE_FINALIZATION,
+	ASR_OUTLINE_SHAPE,
+	ASR_ROTATE_SHAPE,
+	ASR_TRANSLATE_SHAPE,
+	ASR_SHADE_AND_CLEANUP,
+	ASR_VERIFY_FILE_PATH,
+	ASR_SAVE_PNG
+
+};
+
 class TestSetGenerator
 {
 private:  //Member variables
@@ -47,6 +62,10 @@ private:  //Member variables
 	bool m_cleanup_color_override;
 	bool m_cleanup_turn_all_colors_on;
 	bool m_shade_turn_all_colors_off;
+
+	std::pair<double, int> m_analytics_array[10];
+	int m_analytics_counter;
+	int m_analytics_total_counter;
 
 public: 
 	//Constructor
@@ -76,7 +95,7 @@ public:
 	bool DrawShape(SBX::Polygon poly, array2d<rgb_pixel> & image, rgb_pixel color);
 	void ShadeShape(array2d<rgb_pixel> & image, SBX::Polygon poly);
 
-	void DrawSide(Side side, array2d<rgb_pixel> & image, rgb_pixel color);
+	bool DrawSide(Side side, array2d<rgb_pixel> & image, rgb_pixel color);
 	void OutlineShape(SBX::Polygon poly, array2d<rgb_pixel> & image); 
 
 	void CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon poly);
@@ -93,6 +112,8 @@ public:
 	std::string GenerateFilePath(void);
 	bool VerifyFilePath(const std::string & file_path, bool clear_dir = true);
 	void ClearDirectory(const std::string & file_path);
+
+	void TestSetGenerator::DrawTranslateShape(const std::string & file_path);
 
 protected:
 	//Shade Cleanup Tools
@@ -119,5 +140,12 @@ protected:
 
 	int GetYCoord(Side side, int x, int shade, bool is_ceil, bool is_padded_y, bool is_slope_greater_than_one);
 	int GetXCoord(Side side, int y, int shade, bool is_ceil, bool is_padded_x, bool is_slope_greater_than_one);
+
+	//Analytics
+	void RecordAnalytics(time_t start, int subroutine_id);
+	double GetAnalyticAverage(int subroutine_id);
+	void OutputAnalytics(void);
+
+	void ResetAnalytics(void);
 }; 
 #endif /* TESTSETGENERATOR_H */

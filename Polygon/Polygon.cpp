@@ -104,6 +104,12 @@ void Polygon::SetVertexAngle(int vertex_id, float angle)
 }
 
 //...................................................................................
+float Polygon::VertexAngle(int vertex_id)
+{
+	return GetVertex(vertex_id).GetAngle();
+}
+
+//...................................................................................
 void Polygon::SetRotationVertex(int vertex_id, int x, int y, float angle)
 {
 	//We need this so we can set negative x/y values, and then move them later
@@ -143,6 +149,23 @@ bool Polygon::HasVertex(int vertex_id)
 	}
 
 	return has_vertex;
+}
+
+//...................................................................................
+bool Polygon::HasAngleValue(float angle)
+{
+	bool has_angle(false);
+
+	for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
+	{
+		if ((*iter).second.GetAngle() == angle)
+		{
+			has_angle = true;
+			break;
+		}
+	}
+
+	return has_angle;
 }
 
 //...................................................................................
@@ -207,6 +230,31 @@ int Polygon::GetLastVertexID(void) const
 MT_VERTICES_CONT Polygon::GetVerticesCont(void) const
 {
 	return m_vertices_cont;
+}
+
+//...................................................................................
+MT_ANGLES_CONT Polygon::GetAnglesCont(void)
+{
+	MT_ANGLES_CONT angles_cont;
+	
+	for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
+	{
+		angles_cont[(*iter).first] = (*iter).second.GetAngle();
+	}
+
+	return angles_cont;
+}
+
+//...................................................................................
+void Polygon::AssignAnglesContToVertices(MT_ANGLES_CONT angles_cont)
+{
+	if (m_vertices_cont.size() == angles_cont.size())
+	{
+		for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
+		{
+			(*iter).second.SetAngle(angles_cont[(*iter).first]);
+		}
+	}
 }
 
 //...................................................................................
@@ -418,45 +466,10 @@ MT_ERROR_TYPE Polygon::CalculateAngles(void)
 
 	if (!m_is_regular)
 	{
-		//Completely randomize any angles that have not yet been set
-		float total_interior_angle_sum = (float)(((float)m_num_sides - 2.0) * 180.0);
-		float total_interior_angle_left = total_interior_angle_sum;
-
-		//iterate once to gather all previously set angles and subtract those from the total_interior_angle_left, so we don't randomize an angle greater than our resources allow
-		for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
-		{
-			float angle = (*iter).second.GetAngle();
-			if (angle > 0.0)
-			{
-				//We've also got to make sure there's enough angle f
-				if (angle < total_interior_angle_sum - m_num_sides + 1  &&  angle < total_interior_angle_left - (m_vertices_cont.size() - (*iter).first - 1))
-				{
-					total_interior_angle_left = total_interior_angle_left - angle;
-				}
-			}
-		}	
-		if (total_interior_angle_left > 0)
-		{
-			//iterate again to fill in any remaining angles
-			for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
-			{
-				if ((*iter).second.GetAngle() <= 0)
-				{
-					int actual_available_angle = (int)total_interior_angle_left - ((int)m_vertices_cont.size() - (*iter).first - 1);
-					float rand_angle = (float)(std::rand() % actual_available_angle + 1);
-					(*iter).second.SetAngle(rand_angle);
-					total_interior_angle_left -= rand_angle;
-				}
-			}
-			if (total_interior_angle_left > 0)
-			{
-				error_type = ET_ANGLE_SUM_TOO_LOW;
-			}
-		}
-		else if (total_interior_angle_left < 0)
-		{
-			error_type = ET_ANGLE_SUM_TOO_HIGH;
-		}
+		MT_ANGLES_CONT angles_cont = GetAnglesCont();
+		AssignAnglesContToVertices(RandomizeAngles(angles_cont));
+		
+		error_type = ValidateInteriorAngles();
 	}
 
 	return error_type;
@@ -724,7 +737,7 @@ int Polygon::GetRoughCenterY(void)
 //...................................................................................
 int Polygon::GetMaxThickness(void)
 {
-	int max_thickness = 1;
+	int max_thickness(1);
 
 	for (MT_SIDES_CONT::iterator iter = m_sides_cont.begin(); iter != m_sides_cont.end(); iter++)
 	{
@@ -732,6 +745,42 @@ int Polygon::GetMaxThickness(void)
 	}
 
 	return max_thickness;
+}
+
+//...................................................................................
+float Polygon::GetMaxAngle(void)
+{
+	float max_angle(0.0);
+	
+	for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
+	{
+		max_angle = max((*iter).second.GetAngle(), max_angle);
+	}
+	
+	return max_angle;
+}
+
+//...................................................................................
+bool Polygon::HasEquivalentInteriorAngles(void)
+{
+	bool has_equivalent_interior_angles(false);
+
+	std::vector<float> temp_cont;
+	std::vector<float>::iterator duplicate_value_iter = temp_cont.end();
+	std::sort(temp_cont.begin(), temp_cont.end());
+
+	for (MT_VERTICES_CONT::iterator iter = m_vertices_cont.begin(); iter != m_vertices_cont.end(); iter++)
+	{
+		float angle = (*iter).second.GetAngle();
+		if (std::find(temp_cont.begin(), temp_cont.end(), angle) != temp_cont.end())
+		{
+			has_equivalent_interior_angles = true;
+			break;
+		}
+		temp_cont.push_back((*iter).second.GetAngle());
+	}
+
+	return has_equivalent_interior_angles;
 }
 
 //...................................................................................
@@ -824,6 +873,33 @@ Side Polygon::GetPreviousSide(int cur_side)
 Side Polygon::GetNextSide(int cur_side)
 {
 	return GetSide((cur_side+1)%m_num_sides);
+}
+
+//...................................................................................
+MT_ERROR_TYPE Polygon::ValidateInteriorAngles(void)
+{
+	MT_ERROR_TYPE error_type(ET_NONE);
+	float total_interior_angle_measure = GetTotalInteriorAngleMeasure();
+	float interior_angles_sum(0.0);
+
+	MT_VERTICES_CONT vertices_cont = GetVerticesCont();
+	for (MT_VERTICES_CONT::iterator iter = vertices_cont.begin(); iter != vertices_cont.end(); iter++)
+	{
+		interior_angles_sum += (*iter).second.GetAngle();
+	}
+
+	if (interior_angles_sum != total_interior_angle_measure)
+	{
+		error_type = interior_angles_sum > total_interior_angle_measure ? ET_ANGLE_SUM_TOO_HIGH : ET_ANGLE_SUM_TOO_LOW;
+	}
+
+	return error_type;
+}
+
+//...................................................................................
+float Polygon::GetTotalInteriorAngleMeasure(void)
+{
+	return ((float)GetNumSides() - 2.0) * 180.0;
 }
 
 //...................................................................................
@@ -1280,6 +1356,28 @@ void Polygon::Translate(int delta_x, int delta_y, Polygon * polygon)
 }
 
 //...................................................................................
+std::pair<int, int> Polygon::CalculateEndpoint(double x1, double x2, double y1, double y2, int i)
+{
+	int counter = 0;
+	double y(0.0);
+	double x = max(x2, x1) + i;
+	double fractpart, intpart;
+	fractpart = 0.1;
+	double dir = (x2 < x1) ? 1 : -1;
+	while (fractpart != 0.0  &&  counter < 100)
+	{
+		x = x + dir;
+		y = ((y2 - y1) / (x2 - x1))*(x - x1) + y1;
+
+		fractpart = modf(y, &intpart);
+
+		counter++;
+	}
+
+	return std::pair<int, int>((int)x, (int)y);
+}
+
+//...................................................................................
 int Polygon::CalculateXValue(Vertex starting_vertex, Vertex ending_vertex, int new_y)
 {
 	int x(0);
@@ -1366,25 +1464,72 @@ wstring Polygon::VertexLabel(int vertex_id)
 }
 
 //...................................................................................
-std::pair<int, int> Polygon::CalculateEndpoint(double x1, double x2, double y1, double y2, int i)
+int Polygon::GetRandomVertexID(int num_vertices)
 {
-	int counter = 0;
-	double y(0.0);
-	double x = max(x2,x1) + i;
-	double fractpart, intpart;
-	fractpart = 0.1;
-	double dir = (x2 < x1) ? 1 : -1;
-	while (fractpart != 0.0  &&  counter < 100)
+	return rand() % num_vertices;
+}
+
+//...................................................................................
+float Polygon::GetRandomObtuseAngle(void)
+{
+	return rand() % 90 + 91;
+	//return rand() % ((int)total_interior_angle_sum - 89 - m_num_vertices) + 91;
+}
+
+//...................................................................................
+float Polygon::GetRandomAcuteAngle(void)
+{
+	return rand() % 89 + 1;
+}
+
+//...................................................................................
+float Polygon::GetRandomAngleUnder180(void)
+{
+	return rand() % 179 + 1;
+}
+
+//...................................................................................
+float Polygon::GetRandomAngleUnder180(void)
+{
+	return rand() % 179 + 1;
+}
+
+//...................................................................................
+MT_ANGLES_CONT Polygon::RandomizeAngles(MT_ANGLES_CONT angles_cont)
+{
+	//Completely randomize any angles that have not yet been set
+	float total_interior_angle_sum = (float)(((float)m_num_sides - 2.0) * 180.0);
+	float total_interior_angle_left = total_interior_angle_sum;
+
+	//iterate once to gather all previously set angles and subtract those from the total_interior_angle_left, so we don't randomize an angle greater than our resources allow
+	for (MT_ANGLES_CONT::iterator iter = angles_cont.begin(); iter != angles_cont.end(); iter++)
 	{
-		x = x + dir;
-		y = ((y2 - y1) / (x2 - x1))*(x - x1) + y1;
-
-		fractpart = modf(y, &intpart);
-
-		counter++;		
+		float angle = (*iter).second;
+		if (angle > 0.0)
+		{
+			//We've also got to make sure there's enough angle f
+			if (angle < total_interior_angle_sum - m_num_sides + 1 && angle < total_interior_angle_left - (m_vertices_cont.size() - (*iter).first - 1))
+			{
+				total_interior_angle_left = total_interior_angle_left - angle;
+			}
+		}
 	}
-	
-	return std::pair<int, int>((int)x, (int)y);
+	if (total_interior_angle_left > 0)
+	{
+		//iterate again to fill in any remaining angles
+		for (MT_ANGLES_CONT::iterator iter = angles_cont.begin(); iter != angles_cont.end(); iter++)
+		{
+			if ((*iter).second <= 0.0)
+			{
+				int actual_available_angle = (int)total_interior_angle_left - ((int)m_vertices_cont.size() - (*iter).first - 1);
+				float rand_angle = (float)(std::rand() % actual_available_angle + 1);
+				(*iter).second = rand_angle;
+				total_interior_angle_left -= rand_angle;
+			}
+		}
+	}
+
+	return angles_cont;
 }
 
 //...................................................................................

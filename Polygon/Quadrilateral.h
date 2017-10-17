@@ -44,11 +44,14 @@ public:
 	//Inherited methods from Polygon
 	void InitPolygon(void);
 	void AnalyzePolygon(void);
-	bool CalculateAngles(void);
+	MT_ERROR_TYPE CalculateAngles(void);
 
 	std::string GenerateFilePathExtension(void);
 
 	MT_QUALIFIERS_CONT GetQualifiers(void);
+
+	//Static Methods
+	static MT_ANGLES_CONT RandomizeAngles(int shape_option);
 
 private:
 	bool m_is_sqr;
