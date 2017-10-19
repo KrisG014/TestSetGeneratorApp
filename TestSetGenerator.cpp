@@ -57,6 +57,24 @@ TestSetGenerator::TestSetGenerator(void)
 }
 
 //...................................................................................
+/*Setters and Getters Not Defined in Header*/
+//...................................................................................
+SBX::Polygon TestSetGenerator::GetPolygon(void)
+{ 
+	return m_poly; 
+}
+
+//...................................................................................
+void TestSetGenerator::SetPolygon(const SBX::Polygon & poly) 
+{ 
+	m_poly = poly; 
+	m_poly.RefreshSideVertexPointers();
+	m_poly.RefreshCoordinatePointers();
+}
+//...................................................................................
+/*Utils*/
+//...................................................................................
+
 void TestSetGenerator::TestGenerator(void)
 {
 	Quadrilateral quad;

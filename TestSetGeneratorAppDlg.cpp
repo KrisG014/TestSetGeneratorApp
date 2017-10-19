@@ -198,69 +198,79 @@ void CTestSetGeneratorAppDlg::OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pRes
 
 	if (row != m_cur_length_row_select)
 	{
-		m_cur_length_row_select = row;
-		int cur_col_select = m_lb_side_lengths.GetSelectedColumn();
+		if (m_edit_type_side_lengths == EO_ALL || (m_edit_type_side_lengths == EO_SOME  &&  IsSideEditable(row)))
+		{
+			ResetRows();
+			m_cur_length_row_select = row;
+			int cur_col_select = m_lb_side_lengths.GetSelectedColumn();
 
-		CRect lv_rect;
-		m_lb_side_lengths.GetWindowRect(lv_rect);
-		ScreenToClient(lv_rect);
-		CRect rect;
-		m_lb_side_lengths.GetItemRect(row, &rect, LVIR_BOUNDS);
-		int left = lv_rect.left + rect.left + 76;
-		int top = lv_rect.top + rect.top;
-		int height = rect.bottom - rect.top;
+			CRect lv_rect;
+			m_lb_side_lengths.GetWindowRect(lv_rect);
+			ScreenToClient(lv_rect);
+			CRect rect;
+			m_lb_side_lengths.GetItemRect(row, &rect, LVIR_BOUNDS);
+			int left = lv_rect.left + rect.left + 60;
+			int top = lv_rect.top + rect.top;
+			int height = rect.bottom - rect.top;
 
-		CString	text;
-		m_lb_side_lengths.SetSelectionMark(row);
-		text = m_lb_side_lengths.GetItemText(row, 1);
-		m_eb_side_length.MoveWindow(left, top, 50, height);
+			CString	text;
+			m_lb_side_lengths.SetSelectionMark(row);
+			text = m_lb_side_lengths.GetItemText(row, 1);
+			m_eb_side_length.MoveWindow(left, top, 60, height);
 
-		m_eb_side_length.ShowWindow(SW_SHOW);
-		m_eb_side_length.BringWindowToTop();
-		m_eb_side_length.SetWindowTextW(text);
-		m_eb_side_length.SetFocus();
+			m_eb_side_length.ShowWindow(SW_SHOW);
+			m_eb_side_length.BringWindowToTop();
+			m_eb_side_length.SetWindowTextW(text);
+			m_eb_side_length.SetFocus();
+		}
 	}
 	*pResult = 0;
+	pNMLV->iItem = -1;
 }
 
 
 void CTestSetGeneratorAppDlg::OnLvnItemchangedList2(NMHDR *pNMHDR, LRESULT *pResult)
 {
-	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-	int row = pNMLV->iItem;
-	HideEditBoxes();
-
-	if (row != m_cur_thick_row_select)
+	if (m_edit_type_side_lengths != EO_NONE)
 	{
-		m_cur_thick_row_select = row;
-		int cur_col_select = m_lb_side_thickness.GetSelectedColumn();
+		LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+		int row = pNMLV->iItem;
+		HideEditBoxes();
 
-		CRect lv_rect;
-		m_lb_side_thickness.GetWindowRect(lv_rect);
-		ScreenToClient(lv_rect);
-		CRect rect;
-		m_lb_side_thickness.GetItemRect(row, &rect, LVIR_BOUNDS);
-		int left = lv_rect.left + rect.left + 76;
-		int top = lv_rect.top + rect.top;
-		int height = rect.bottom - rect.top;
+		if (row != m_cur_thick_row_select)
+		{			
+			ResetRows();
+			m_cur_thick_row_select = row;
+			int cur_col_select = m_lb_side_thickness.GetSelectedColumn();
 
-		CString	text;
-		m_lb_side_thickness.SetSelectionMark(row);
-		text = m_lb_side_thickness.GetItemText(row, 1);
-		m_eb_side_thickness.MoveWindow(left, top, 50, height);
+			CRect lv_rect;
+			m_lb_side_thickness.GetWindowRect(lv_rect);
+			ScreenToClient(lv_rect);
+			CRect rect;
+			m_lb_side_thickness.GetItemRect(row, &rect, LVIR_BOUNDS);
+			int left = lv_rect.left + rect.left + 60;
+			int top = lv_rect.top + rect.top;
+			int height = rect.bottom - rect.top;
 
-		m_eb_side_thickness.ShowWindow(SW_SHOW);
-		m_eb_side_thickness.BringWindowToTop();
-		m_eb_side_thickness.SetWindowTextW(text);
-		m_eb_side_thickness.SetFocus();
+			CString	text;
+			m_lb_side_thickness.SetSelectionMark(row);
+			text = m_lb_side_thickness.GetItemText(row, 1);
+			m_eb_side_thickness.MoveWindow(left, top, 60, height);
+
+			m_eb_side_thickness.ShowWindow(SW_SHOW);
+			m_eb_side_thickness.BringWindowToTop();
+			m_eb_side_thickness.SetWindowTextW(text);
+			m_eb_side_thickness.SetFocus();
+		}
+		*pResult = 0;
+		pNMLV->iItem = -1;
 	}
-	*pResult = 0;
 }
 
 
 void CTestSetGeneratorAppDlg::OnLvnItemchangedList3(NMHDR *pNMHDR, LRESULT *pResult)
 {
-	if (m_can_edit_angle_measueres)
+	if (m_edit_type_vertex_angles != EO_NONE)
 	{
 		LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 		int row = pNMLV->iItem;
@@ -268,29 +278,34 @@ void CTestSetGeneratorAppDlg::OnLvnItemchangedList3(NMHDR *pNMHDR, LRESULT *pRes
 
 		if (row != m_cur_angle_row_select)
 		{
-			m_cur_angle_row_select = row;
-			int cur_col_select = m_lb_vertex_angles.GetSelectedColumn();
+			if (m_edit_type_vertex_angles == EO_ALL || (m_edit_type_vertex_angles == EO_SOME  &&  IsVertexEditable(row)))
+			{
+				ResetRows();
+				m_cur_angle_row_select = row;
+				int cur_col_select = m_lb_vertex_angles.GetSelectedColumn();
 
-			CRect lv_rect;
-			m_lb_vertex_angles.GetWindowRect(lv_rect);
-			ScreenToClient(lv_rect);
-			CRect rect;
-			m_lb_vertex_angles.GetItemRect(row, &rect, LVIR_BOUNDS);
-			int left = lv_rect.left + rect.left + 76;
-			int top = lv_rect.top + rect.top;
-			int height = rect.bottom - rect.top;
+				CRect lv_rect;
+				m_lb_vertex_angles.GetWindowRect(lv_rect);
+				ScreenToClient(lv_rect);
+				CRect rect;
+				m_lb_vertex_angles.GetItemRect(row, &rect, LVIR_BOUNDS);
+				int left = lv_rect.left + rect.left + 60;
+				int top = lv_rect.top + rect.top;
+				int height = rect.bottom - rect.top;
 
-			CString	text;
-			m_lb_vertex_angles.SetSelectionMark(row);
-			text = m_lb_vertex_angles.GetItemText(row, 1);
-			m_eb_vertex_angles.MoveWindow(left, top, 50, height);
+				CString	text;
+				m_lb_vertex_angles.SetSelectionMark(row);
+				text = m_lb_vertex_angles.GetItemText(row, 1);
+				m_eb_vertex_angles.MoveWindow(left, top, 60, height);
 
-			m_eb_vertex_angles.ShowWindow(SW_SHOW);
-			m_eb_vertex_angles.BringWindowToTop();
-			m_eb_vertex_angles.SetWindowTextW(text);
-			m_eb_vertex_angles.SetFocus();
+				m_eb_vertex_angles.ShowWindow(SW_SHOW);
+				m_eb_vertex_angles.BringWindowToTop();
+				m_eb_vertex_angles.SetWindowTextW(text);
+				m_eb_vertex_angles.SetFocus();
+			}
 		}
 		*pResult = 0;
+		pNMLV->iItem = -1;
 	}
 }
 
@@ -303,6 +318,7 @@ void CTestSetGeneratorAppDlg::OnEnChangeEdit1()
 	{
 		GetDlgItemText(IDC_EDIT1, text);
 		m_lb_side_lengths.SetItemText(item, 1, text);
+		SetEquivalentValues(&m_lb_side_lengths, GetEquivalentSides(item), text);
 	}
 }
 
@@ -327,6 +343,7 @@ void CTestSetGeneratorAppDlg::OnEnChangeEdit7()
 	{
 		GetDlgItemText(IDC_EDIT7, text);
 		m_lb_vertex_angles.SetItemText(item, 1, text);
+		SetEquivalentValues(&m_lb_vertex_angles, GetEquivalentVertices(item), text);
 	}
 }
 
@@ -352,6 +369,7 @@ void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo()
 			m_cb_quad_options.ShowWindow(SW_SHOW);
 			m_cb_tri_options.ShowWindow(SW_HIDE);
 		}
+		ResetMemberVariables();
 		ResetEditBoxes();
 		HideEditBoxes();
 	}
@@ -360,95 +378,90 @@ void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo()
 void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo1()
 {
 	int cur_select = m_cb_quad_options.GetCurSel();
+	SetCanEditSideLengths(EO_ALL);
+
 	switch (cur_select)
 	{
-		case Quadrilateral::QT_SQUARE:
-				SetNumSideRows(1);
-				SetNumVertexAngleRows(1);
-				SetCanEditVertexAngles(false);
-				SetVertexAngle(Quadrilateral::SL_AB, 90);
-				break;
+		case Quadrilateral::QT_SQUARE:				
+			SetCanEditVertexAngles(EO_NONE);
+			SetAllVertexAngles(90);
+			AddSideEquivalency({ Quadrilateral::SL_AB, Quadrilateral::SL_BC, Quadrilateral::SL_CD, Quadrilateral::SL_DA });
+			break;
 		case Quadrilateral::QT_RECTANGLE:
-				SetNumSideRows(2);
-				SetNumVertexAngleRows(1);
-				SetCanEditVertexAngles(false);
-				SetVertexAngle(Quadrilateral::SL_AB, 90);
-				break;
+			SetCanEditVertexAngles(EO_NONE);
+			SetAllVertexAngles(90);
+			AddSideEquivalency({ Quadrilateral::SL_AB, Quadrilateral::SL_CD});
+			AddSideEquivalency({ Quadrilateral::SL_BC, Quadrilateral::SL_DA });
+			break;
 		case Quadrilateral::QT_RHOMBUS:
-				SetNumSideRows(1);
-				SetNumVertexAngleRows(2);
-				SetCanEditVertexAngles(true);
-				break;
+			SetCanEditVertexAngles(EO_SOME);
+			SetEditableVertices({ Vertex::VI_A, Vertex::VI_B });
+			SetEditableSides({ Quadrilateral::SL_AB, Quadrilateral::SL_BC });
+			AddSideEquivalency({ Quadrilateral::SL_AB, Quadrilateral::SL_BC, Quadrilateral::SL_CD, Quadrilateral::SL_DA });
+			AddVertexEquivalency({ Vertex::VI_A, Vertex::VI_C });
+			AddVertexEquivalency({ Vertex::VI_B, Vertex::VI_D });
+			break;
 		case Quadrilateral::QT_PARALLELOGRAM:
-				SetNumSideRows(2);
-				SetNumVertexAngleRows(2);
-				SetCanEditVertexAngles(true);
-				break;
-		case Quadrilateral::QT_TRAPEZOID:
-				SetNumSideRows(4);
-				SetNumVertexAngleRows(4);
-				SetCanEditVertexAngles(true);
-				break;
+			SetCanEditVertexAngles(EO_SOME);
+			SetEditableVertices({ Vertex::VI_A, Vertex::VI_B });
+			AddSideEquivalency({ Quadrilateral::SL_AB, Quadrilateral::SL_CD });
+			AddSideEquivalency({ Quadrilateral::SL_BC, Quadrilateral::SL_DA });
+			AddVertexEquivalency({ Vertex::VI_A, Vertex::VI_C });
+			AddVertexEquivalency({ Vertex::VI_B, Vertex::VI_D });
+			break;
 		case Quadrilateral::QT_KITE:
-				SetNumSideRows(4);
-				SetNumVertexAngleRows(3);
-				SetCanEditVertexAngles(true);
-				break;
+			SetCanEditVertexAngles(EO_SOME);
+			SetEditableVertices({ Vertex::VI_A, Vertex::VI_B });
+			SetEditableSides({ Quadrilateral::SL_AB, Quadrilateral::SL_BC });
+			break;
 
 		default:
-			SetNumSideRows(4);
-			SetNumVertexAngleRows(4);
-			SetCanEditVertexAngles(true);
+			SetCanEditVertexAngles(EO_ALL);
 	}
 }
 
 void CTestSetGeneratorAppDlg::OnCbnSelchangeCombo2()
 {
 	int cur_select = m_cb_tri_options.GetCurSel();
+	SetCanEditSideLengths(EO_ALL);
+
 	switch (cur_select)
 	{
 		case Triangle::TRT_EQUILATERAL:
-			SetNumSideRows(1);
-			SetNumVertexAngleRows(1);
-			SetCanEditVertexAngles(false);
-			SetVertexAngle(Triangle::SL_AB, 60);
+			SetCanEditVertexAngles(EO_NONE);
+			SetAllVertexAngles(60);
+
+			SetEditableSides({ Triangle::SL_AB });
+			AddSideEquivalency({ Triangle::SL_AB, Triangle::SL_BC, Triangle::SL_CA });
+			AddVertexEquivalency({ Vertex::VI_A, Vertex::VI_B, Vertex::VI_C });
 			break;
 		case Triangle::TRT_ISOCELES:
-			SetNumSideRows(2);
-			SetNumVertexAngleRows(2);
-			SetCanEditVertexAngles(true);
+			SetCanEditVertexAngles(EO_SOME);
+			SetEditableVertices({ Vertex::VI_A });
+			SetCanEditSideLengths(EO_SOME);
+			SetEditableSides({ Triangle::SL_AB });
+			AddSideEquivalency({ Triangle::SL_AB, Triangle::SL_BC });
+			AddVertexEquivalency({ Vertex::VI_A, Vertex::VI_B });
 			break;
 		case Triangle::TRT_RIGHT:
-			SetNumSideRows(3);
-			SetNumVertexAngleRows(3);
-			SetCanEditVertexAngles(true);
+			SetCanEditVertexAngles(EO_SOME);
+			SetVertexAngle(Vertex::VI_B, 90);
+			SetEditableVertices({ Vertex::VI_A });
+			SetCanEditSideLengths(EO_SOME);
+			SetEditableSides({ Triangle::SL_AB });
 			break;
 		case Triangle::TRT_RIGHT_ISOCELES:
-			SetNumSideRows(2);
-			SetNumVertexAngleRows(2);
-			SetCanEditVertexAngles(true);
-			break;
-		case Triangle::TRT_ACUTE:
-			SetNumSideRows(3);
-			SetNumVertexAngleRows(3);
-			SetCanEditVertexAngles(true);
-			break;
-		case Triangle::TRT_OBTUSE:
-			SetNumSideRows(3);
-			SetNumVertexAngleRows(3);
-			SetCanEditVertexAngles(true);
-			break;
-		case Triangle::TRT_SCALENE:
-			SetNumSideRows(3);
-			SetNumVertexAngleRows(3);
-			SetCanEditVertexAngles(true);
-			//add edit boxes later for angles
+			SetCanEditVertexAngles(EO_NONE);
+			SetVertexAngle(Vertex::VI_A, 45);
+			SetVertexAngle(Vertex::VI_A, 90);
+			SetVertexAngle(Vertex::VI_A, 45);
+			SetCanEditSideLengths(EO_SOME);
+			SetEditableSides({ Triangle::SL_AB });
 			break;
 
 		default:
-			SetNumSideRows(3);
-			SetNumVertexAngleRows(3);
-			SetCanEditVertexAngles(true);
+			SetCanEditVertexAngles(EO_ALL);
+			SetCanEditSideLengths(EO_ALL);
 	}
 }
 
@@ -464,6 +477,8 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 	{
 		is_polygon_gen_success = GenerateTriangle(poly);
 	}
+	
+	//Update Side Lengths
 
 	/*DEBUGGING*/
 	/*is_polygon_gen_success = true;*/
@@ -471,6 +486,7 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 	
 	if (is_polygon_gen_success)
 	{	
+		UpdateSideLengths(poly);
 		m_lbl_progress.SetWindowTextW(L"Generating Polygons!");
 	
 		/*DEBUGGING*/
@@ -570,6 +586,56 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton2()
 //User defined functions
 /////////////////////////////////////////////////////////////////////////////////////
 //...................................................................................
+void CTestSetGeneratorAppDlg::AddSideEquivalency(MT_INT_CONT equivalent_sides)
+{	
+	for (MT_INT_CONT::iterator iter = equivalent_sides.begin(); iter != equivalent_sides.end(); iter++)
+	{
+		MT_INT_CONT temp_vector;
+		temp_vector.insert(temp_vector.end(), equivalent_sides.begin(), iter);
+		temp_vector.insert(temp_vector.end(), iter + 1, equivalent_sides.end());
+		m_equivalent_sides[*iter] = temp_vector;
+	}
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::AddVertexEquivalency(MT_INT_CONT equivalent_vertices)
+{
+	for (MT_INT_CONT::iterator iter = equivalent_vertices.begin(); iter != equivalent_vertices.end(); iter++)
+	{
+		MT_INT_CONT temp_vector;
+		temp_vector.insert(temp_vector.end(), equivalent_vertices.begin(), iter);
+		temp_vector.insert(temp_vector.end(), iter + 1, equivalent_vertices.end());
+		m_equivalent_vertices[*iter] = temp_vector;
+	}
+}
+
+//...................................................................................
+MT_INT_CONT CTestSetGeneratorAppDlg::GetEquivalentSides(int side_label)
+{
+	MT_INT_CONT result;
+
+	if (m_equivalent_sides.find(side_label) != m_equivalent_sides.end())
+	{
+		result = m_equivalent_sides[side_label];
+	}
+
+	return result;
+}
+
+//...................................................................................
+MT_INT_CONT CTestSetGeneratorAppDlg::GetEquivalentVertices(int vertex_id)
+{
+	MT_INT_CONT result;
+
+	if (m_equivalent_vertices.find(vertex_id) != m_equivalent_vertices.end())
+	{
+		result = m_equivalent_vertices[vertex_id];
+	}
+
+	return result;
+}
+
+//...................................................................................
 void CTestSetGeneratorAppDlg::InitializeMemberVariables(void)
 {
 	SetCurLengthRowSelect(-1);
@@ -613,13 +679,13 @@ void CTestSetGeneratorAppDlg::InitSideListViews(void)
 
 	lv_length_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lv_length_col.fmt = LVCFMT_LEFT;
-	lv_length_col.cx = 75;
+	lv_length_col.cx = 60;
 	lv_length_col.pszText = L"Side Num";
 	m_lb_side_lengths.InsertColumn(0, &lv_length_col);
 
 	lv_length_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lv_length_col.fmt = LVCFMT_LEFT;
-	lv_length_col.cx = 50;
+	lv_length_col.cx = 45;
 	lv_length_col.pszText = L"Length";
 	m_lb_side_lengths.InsertColumn(1, &lv_length_col);
 
@@ -627,13 +693,13 @@ void CTestSetGeneratorAppDlg::InitSideListViews(void)
 
 	lv_thickness_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lv_thickness_col.fmt = LVCFMT_LEFT;
-	lv_thickness_col.cx = 75;
+	lv_thickness_col.cx = 60;
 	lv_thickness_col.pszText = L"Side Num";
 	m_lb_side_thickness.InsertColumn(0, &lv_thickness_col);
 
 	lv_thickness_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lv_thickness_col.fmt = LVCFMT_LEFT;
-	lv_thickness_col.cx = 50;
+	lv_thickness_col.cx = 58;
 	lv_thickness_col.pszText = L"Thickness";
 	m_lb_side_thickness.InsertColumn(1, &lv_thickness_col);
 
@@ -641,13 +707,13 @@ void CTestSetGeneratorAppDlg::InitSideListViews(void)
 
 	lv_angle_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lv_angle_col.fmt = LVCFMT_LEFT;
-	lv_angle_col.cx = 75;
+	lv_angle_col.cx = 60;
 	lv_angle_col.pszText = L"Vertex";
 	m_lb_vertex_angles.InsertColumn(0, &lv_angle_col);
 
 	lv_angle_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lv_angle_col.fmt = LVCFMT_LEFT;
-	lv_angle_col.cx = 50;
+	lv_angle_col.cx = 40;
 	lv_angle_col.pszText = L"Angle";
 	m_lb_vertex_angles.InsertColumn(1, &lv_angle_col);
 }
@@ -655,11 +721,12 @@ void CTestSetGeneratorAppDlg::InitSideListViews(void)
 //...................................................................................
 void CTestSetGeneratorAppDlg::SetNumSideRows(int num_rows)
 {
+	//Added extra space at the end of the "Side" label for clickability
 	m_lb_side_lengths.DeleteAllItems();
 	for (int i = 0; i < num_rows; i++)
 	{
 		LVITEM lv_item_length;
-		std::wstring item_text = L"Side " + to_wstring(i + 1);
+		std::wstring item_text = L"Side " + to_wstring(i + 1) + L"     ";
 
 		lv_item_length.mask = LVIF_TEXT;
 		lv_item_length.iItem = i;
@@ -677,7 +744,7 @@ void CTestSetGeneratorAppDlg::SetNumSideThicknessRows(int num_rows)
 	for (int i = 0; i < num_rows; i++)
 	{
 		LVITEM lv_item_thickness;
-		std::wstring item_text = L"Side " + to_wstring(i + 1);
+		std::wstring item_text = L"Side " + to_wstring(i + 1) + L"     ";
 
 		lv_item_thickness.mask = LVIF_TEXT;
 		lv_item_thickness.iItem = i;
@@ -695,7 +762,7 @@ void CTestSetGeneratorAppDlg::SetNumVertexAngleRows(int num_rows)
 	for (int i = 0; i < num_rows; i++)
 	{
 		LVITEM lv_item_angle;
-		std::wstring item_text = L"Vertex " + to_wstring(i + 1);
+		std::wstring item_text = L"Vertex " + to_wstring(i + 1) + L" ";
 
 		lv_item_angle.mask = LVIF_TEXT;
 		lv_item_angle.iItem = i;
@@ -810,7 +877,7 @@ float CTestSetGeneratorAppDlg::GetVertexAngle(int vertex_id)
 
 	if (vertex_id < m_lb_vertex_angles.GetItemCount())
 	{
-		angle = (float)StrToInt(m_lb_side_thickness.GetItemText(vertex_id, 1));
+		angle = (float)StrToInt(m_lb_vertex_angles.GetItemText(vertex_id, 1));
 		if (angle < 0.0)
 		{
 			angle = 0.0;
@@ -1021,6 +1088,26 @@ bool CTestSetGeneratorAppDlg::GenerateTriangle(SBX::Polygon * poly)
 }
 
 //...................................................................................
+void CTestSetGeneratorAppDlg::ResetMemberVariables(void)
+{
+	ResetRows();
+	SetCanEditSideLengths(EO_ALL);
+	SetCanEditVertexAngles(EO_ALL);
+	SetEditableSides({});
+	SetEditableVertices({});
+	ResetSideEquivalencies();
+	ResetVertexEquivalencies();
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::ResetRows(void)
+{
+	SetCurLengthRowSelect(-1);
+	SetCurThickRowSelect(-1);
+	SetCurAngleRowSelect(-1);
+}
+
+//...................................................................................
 void CTestSetGeneratorAppDlg::ResetEditBoxes(void)
 {
 	m_eb_side_thickness.SetWindowTextW(L"1");
@@ -1044,7 +1131,19 @@ void CTestSetGeneratorAppDlg::SetVertexAngle(int vertex_id, int angle)
 	{
 		CString angle_str;
 		angle_str.Format(L"%d", angle);
-		m_lb_side_lengths.SetItemText(vertex_id, 1, angle_str);
+		m_lb_vertex_angles.SetItemText(vertex_id, 1, angle_str);
+	}
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::SetAllVertexAngles(int angle)
+{
+	CString angle_str;
+	angle_str.Format(L"%d", angle);
+
+	for (int i = 0; i < m_lb_vertex_angles.GetItemCount(); i++)
+	{			
+		m_lb_vertex_angles.SetItemText(i, 1, angle_str);	
 	}
 }
 
@@ -1056,7 +1155,48 @@ void CTestSetGeneratorAppDlg::FillVertexAnglesFromAnglesCont(MT_ANGLES_CONT angl
 
 	for (int i = 0; i < num_angles; i++)
 	{
-		m_lb_vertex_angles.SetItemText(i, 1, to_wstring(angles_cont[i]).c_str());
+		m_lb_vertex_angles.SetItemText(i, 1, to_wstring((int)angles_cont[i]).c_str());
+	}
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::UpdateSideLengths(SBX::Polygon * poly)
+{
+	if (poly)
+	{
+		int num_sides = poly->GetNumSides();
+		int almost_final_side_length = poly->GetSideLength(num_sides - 2);
+		int final_side_length = poly->GetSideLength(num_sides - 1);
+		if (m_lb_side_lengths.GetItemCount() == num_sides)
+		{
+			m_lb_side_lengths.SetItemText(num_sides - 2, 1, to_wstring(almost_final_side_length).c_str());
+			m_lb_side_lengths.SetItemText(num_sides - 1, 1, to_wstring(final_side_length).c_str());
+		}
+	}
+}
+
+//...................................................................................
+bool CTestSetGeneratorAppDlg::IsVertexEditable(int vertex_id)
+{
+	return find(m_editable_vertices.begin(), m_editable_vertices.end(), vertex_id) != m_editable_vertices.end();
+}
+
+//...................................................................................
+bool CTestSetGeneratorAppDlg::IsSideEditable(int side_id)
+{
+	return find(m_editable_sides.begin(), m_editable_sides.end(), side_id) != m_editable_sides.end();
+}
+
+//...................................................................................
+void CTestSetGeneratorAppDlg::SetEquivalentValues(CListCtrl * lb, MT_INT_CONT ids, CString value)
+{
+	
+	if (!ids.empty()  &&  StrToInt(value) < lb->GetItemCount())
+	{
+		for (MT_INT_CONT::iterator iter = ids.begin(); iter != ids.end(); iter++)
+		{
+			lb->SetItemText(*iter, 1, value);
+		}
 	}
 }
 

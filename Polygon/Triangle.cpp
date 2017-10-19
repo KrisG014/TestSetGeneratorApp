@@ -279,14 +279,18 @@ MT_ANGLES_CONT Triangle::RandomizeAngles(int shape_option)
 	{
 		int vertex_id = GetRandomVertexID(3);
 		float angle = GetRandomObtuseAngle();
+		if (angle >= 179)
+		{
+			angle = 178;
+		}
 		angles_cont[vertex_id] = angle;
-		angles_cont = Polygon::RandomizeAngles(angles_cont);
+		angles_cont = Polygon::RandomizeAngles(angles_cont, 3);
 	}
 	if (shape_option == TRT_RIGHT)
 	{
 		int vertex_id = GetRandomVertexID(3);
 		angles_cont[vertex_id] = 90.0;
-		angles_cont = Polygon::RandomizeAngles(angles_cont);
+		angles_cont = Polygon::RandomizeAngles(angles_cont, 3);
 	}
 	if (shape_option == TRT_ACUTE)
 	{
@@ -296,7 +300,7 @@ MT_ANGLES_CONT Triangle::RandomizeAngles(int shape_option)
 	}
 	if (shape_option == TRT_SCALENE)
 	{
-		angles_cont = Polygon::RandomizeAngles(angles_cont);
+		angles_cont = Polygon::RandomizeAngles(angles_cont, 3);
 	}
 
 	return angles_cont;

@@ -230,11 +230,11 @@ MT_ANGLES_CONT Quadrilateral::RandomizeAngles(int shape_option)
 		float angle = GetRandomAngleUnder180();
 		angles_cont[vertex_id] = angle;
 		angles_cont[(vertex_id + 2) % 4] = angle;
-		angles_cont = Polygon::RandomizeAngles(angles_cont);
+		angles_cont = Polygon::RandomizeAngles(angles_cont, 4);
 	}
 	if (shape_option == QT_NONE || shape_option == QT_TRAPEZOID)
 	{
-		angles_cont = Polygon::RandomizeAngles(angles_cont);
+		angles_cont = Polygon::RandomizeAngles(angles_cont, 4);
 	}
 
 	return angles_cont;

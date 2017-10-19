@@ -11,6 +11,8 @@
 #include "afxpropertygridctrl.h"
 #include "afxvslistbox.h"
 
+typedef std::vector<int> MT_INT_CONT;
+
 // CTestSetGeneratorAppDlg dialog
 class CTestSetGeneratorAppDlg : public CDialogEx
 {
@@ -23,15 +25,23 @@ public:
 	enum { IDD = IDD_TESTSETGENERATORAPP_DIALOG };
 #endif
 
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-
 public: //Data Types
 	enum Shape_Labels
 	{
 		SL_TRIANGLE = 0,
 		SL_QUADRILATERAL
 	};
+
+	enum Editable_Options
+	{
+		EO_ALL = 0,
+		EO_SOME,
+		EO_NONE
+	};
+
+protected:
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+
 
 // Implementation
 protected:
@@ -41,7 +51,12 @@ protected:
 	int m_cur_thick_row_select;
 	int m_cur_angle_row_select;
 	int m_cur_shape_select;
-	bool m_can_edit_angle_measueres;
+	int m_edit_type_vertex_angles;
+	int m_edit_type_side_lengths;
+	MT_INT_CONT m_editable_vertices;
+	MT_INT_CONT m_editable_sides;
+	std::map <int, MT_INT_CONT> m_equivalent_vertices;
+	std::map <int, MT_INT_CONT> m_equivalent_sides;
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -50,7 +65,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP();
 
-protected:  //User defined functions
+public:  //User defined functions
 
 	//Member Variable Accessors
 	void SetCurLengthRowSelect(int cur_length_row_select) { m_cur_length_row_select = cur_length_row_select; }
@@ -65,8 +80,22 @@ protected:  //User defined functions
 	void SetCurShapeSelect(int cur_shape_select) { m_cur_shape_select = cur_shape_select; }
 	int    CurShapeSelect(void)									 { return m_cur_shape_select; }
 
-	void SetCanEditVertexAngles(bool is_can_edit) { m_can_edit_angle_measueres = is_can_edit; }
-	bool    CanEditVertexAngles(void)						  { return m_can_edit_angle_measueres; }
+	void SetCanEditSideLengths(int edit_type) { m_edit_type_side_lengths = edit_type; }
+	int    CanEditSideLengths(void) { return m_edit_type_side_lengths; }
+
+	void SetCanEditVertexAngles(int edit_type) { m_edit_type_vertex_angles = edit_type; }
+	int    CanEditVertexAngles(void)						  { return m_edit_type_vertex_angles; }
+
+	void   AddSideEquivalency(MT_INT_CONT equivalent_sides);
+	void AddVertexEquivalency(MT_INT_CONT equivalent_vertices);
+
+	void ResetSideEquivalencies() { m_equivalent_sides.clear(); }
+	void ResetVertexEquivalencies() { m_equivalent_vertices.clear(); }
+
+	MT_INT_CONT GetEquivalentSides(int side_label);
+	MT_INT_CONT GetEquivalentVertices(int vertex_id);
+
+protected:  //User defined functions
 
 	//Utilities
 	void InitializeMemberVariables(void);
@@ -93,12 +122,24 @@ protected:  //User defined functions
 
 	bool GenerateQuadrilateral(SBX::Polygon * poly);
 	bool GenerateTriangle(SBX::Polygon * poly);
-
+	
+	void ResetMemberVariables(void);
+	void ResetRows(void);
 	void ResetEditBoxes(void);
 	void HideEditBoxes(void);
 
 	void SetVertexAngle(int vertex_id, int angle);
+	void SetAllVertexAngles(int angle);
 	void FillVertexAnglesFromAnglesCont(MT_ANGLES_CONT angles_cont);
+	
+	void UpdateSideLengths(SBX::Polygon * poly);
+
+	void SetEditableVertices(std::vector<int> vertices) { m_editable_vertices = vertices; }
+	void SetEditableSides(std::vector<int> sides) { m_editable_sides = sides; }
+	bool IsVertexEditable(int vertex_id);
+	bool IsSideEditable(int side_id);
+
+	void SetEquivalentValues(CListCtrl * lb, MT_INT_CONT ids, CString value);
 
 public:
 	CComboBox m_cb_shape;

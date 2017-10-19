@@ -85,8 +85,8 @@ public:
 	int  GetRotationIncrement(void) { return m_rotation_incrememnt; }
 	void SetRotationIncrement(int rotation_incrememnt) { m_rotation_incrememnt = rotation_incrememnt; }
 
-	SBX::Polygon GetPolygon(void) { return m_poly; }
-	void         SetPolygon(const SBX::Polygon & poly) { m_poly = poly; }
+	SBX::Polygon GetPolygon(void);
+	void         SetPolygon(const SBX::Polygon & poly);
 
 	//Testing Function
 	void TestGenerator(void);

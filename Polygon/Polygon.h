@@ -50,19 +50,19 @@ namespace SBX
 		Polygon(Polygon& polygon);
 
 		void SetNumSides(int num_sides) { m_num_sides = num_sides; }
-		int  GetNumSides(void) { return m_num_sides; }
+		int  GetNumSides(void) { return m_num_sides; } const
 
 		void SetIsRegular(bool is_regular) { m_is_regular = is_regular; }
-		bool    IsRegular(void) { return m_is_regular; }
+		bool    IsRegular(void) const { return m_is_regular; } 
 
 		void SetIsConvex(bool is_convex) { m_is_convex = is_convex; }
-		bool    IsConvex(void) { return m_is_convex; }
+		bool    IsConvex(void) const { return m_is_convex; }
 
 		void SetPolygonType(const std::string & polygon_type) { m_polygon_type = polygon_type; }
-		std::string GetPolygonType(void) { return m_polygon_type; }
+		std::string GetPolygonType(void) const { return m_polygon_type; }
 
 		void SetFilePathExtension(std::string filepath_extension) { m_filepath_extension = filepath_extension; }
-		std::string GetFilePathExtension(void) { return m_filepath_extension; }
+		std::string GetFilePathExtension(void) const { return m_filepath_extension; }
 		
 
 		//Virtual Methods
@@ -167,6 +167,7 @@ namespace SBX
 		MT_ERROR_TYPE ValidateInteriorAngles(void);
 
 		float GetTotalInteriorAngleMeasure(void);
+		void CalculateConnectingVertexAndSideLengths(void);
 
 		//Static operations on quadrilateral objects
 		static int      GetVertexXCoord(Vertex vertex);
@@ -205,8 +206,7 @@ namespace SBX
 		//static float GetRandomObtuseAngle(int m_num_vertices, float total_interior_angle_sum);
 		static float GetRandomAcuteAngle(void);
 		static float GetRandomAngleUnder180(void);
-
-		static MT_ANGLES_CONT RandomizeAngles(MT_ANGLES_CONT angles_cont);
+		static MT_ANGLES_CONT RandomizeAngles(MT_ANGLES_CONT angles_cont, int num_sides);
 
 	protected:
 		//Operators
@@ -214,6 +214,8 @@ namespace SBX
 		int            GetSideVertexID(int side_label, bool is_starting_vertex) const;
 
 		void InitializeSidesAndVertices(void);
+
+		std::pair<int, int> GetIntersectionOfTwoSides(Side * side_1, Side * side_2);
 
 		//Static Methods
 		static Vertex * GetSideVertex(Side side, bool is_starting_vertex);
