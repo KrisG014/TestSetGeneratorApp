@@ -59,9 +59,8 @@ private:  //Member variables
 	int m_num_y_pixels;
 	int m_rotation_range;
 	int m_rotation_incrememnt;
-	bool m_cleanup_color_override;
 	bool m_cleanup_turn_all_colors_on;
-	bool m_shade_turn_all_colors_off;
+	bool m_shade_turn_all_colors_on;
 
 	std::pair<double, int> m_analytics_array[10];
 	int m_analytics_counter;

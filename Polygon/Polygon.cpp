@@ -507,6 +507,9 @@ void Polygon::CalculateSidesAndVertices()
 	int end_vertex_x(0);
 	int end_vertex_y(0);
 
+	//Needed for final calculations to make polygon legit
+	Side temp_last_side;
+	Vertex temp_last_vertex;
 
 	float angle = ending_vertex.GetAngle();
 	int quadrant = GetQuadrant((int)angle);
@@ -546,12 +549,22 @@ void Polygon::CalculateSidesAndVertices()
 			//end_vertex_y = -1 * (int)round(end_point.imag()) + starting_vertex.GetY();
 			end_vertex_y = (int)round(end_point.imag()) + y_change*starting_vertex.GetY();
 		}
-		
+
+		if (i == m_num_sides - 2)
+		{
+			temp_last_side = GetSide(m_num_sides - 2);
+			temp_last_vertex.SetAngle(0.0);
+			temp_last_vertex.SetX(end_vertex_x);
+			temp_last_vertex.SetY(end_vertex_y);
+			temp_last_side.SetEndingVertex(&temp_last_vertex);
+			CalculateConnectingVertexAndSideLengths(&temp_last_side);
+		}
+		else
+		{		
 		m_vertices_cont[i + 1].SetX(end_vertex_x);
 		m_vertices_cont[i + 1].SetY(end_vertex_y);
+		}
 	}
-
-	CalculateConnectingVertexAndSideLengths();
 
 	int min_x = GetMinX();
 	if (min_x < 0)
@@ -947,15 +960,17 @@ float Polygon::GetTotalInteriorAngleMeasure(void)
 }
 
 //...................................................................................
-void Polygon::CalculateConnectingVertexAndSideLengths(void)
+void Polygon::CalculateConnectingVertexAndSideLengths(Side * side_1)
 {
-	Side * side_1 = GetSideForUpdating(m_num_sides - 2);
-	Side * side_2 = GetSideForUpdating(m_num_sides - 1);
-	std::pair<int, int> intersection = GetIntersectionOfTwoSides(side_1, side_2);
-	m_vertices_cont[m_num_sides - 1].SetX(intersection.first);
-	m_vertices_cont[m_num_sides - 1].SetY(intersection.second);
-	side_1->SetLength((int)CalcDistance(*side_1->GetStartingVertex(), *side_1->GetEndingVertex()));
-	side_2->SetLength((int)CalcDistance(*side_2->GetStartingVertex(), *side_2->GetEndingVertex()));
+	if (side_1)
+	{
+		Side * side_2 = GetSideForUpdating(m_num_sides - 1);
+		std::pair<int, int> intersection = GetIntersectionOfTwoSides(side_1, side_2);
+		m_vertices_cont[m_num_sides - 1].SetX(intersection.first);
+		m_vertices_cont[m_num_sides - 1].SetY(intersection.second);
+		GetSideForUpdating(m_num_sides - 2)->SetLength((int)CalcDistance(*side_1->GetStartingVertex(), *side_1->GetEndingVertex()));
+		side_2->SetLength((int)CalcDistance(*side_2->GetStartingVertex(), *side_2->GetEndingVertex()));
+	}
 }
 
 //...................................................................................

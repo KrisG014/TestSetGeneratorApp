@@ -60,6 +60,9 @@ public:
 	double        GetSlope(void);
 	static double GetSlope(double x1, double y1, double x2, double y2);
 
+	bool IsVertical(void);
+	bool IsHorizontal(void);
+
 	double GetXPointOnSide(double y);
 	double GetYPointOnSide(double x);
 };

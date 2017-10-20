@@ -469,7 +469,7 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 {
 	SBX::Polygon * poly = new SBX::Polygon;
 	bool is_polygon_gen_success(false);
-	if (m_cb_shape.GetCurSel() == SL_QUADRILATERAL)
+	/*if (m_cb_shape.GetCurSel() == SL_QUADRILATERAL)
 	{
 		is_polygon_gen_success = GenerateQuadrilateral(poly);
 	}
@@ -477,42 +477,42 @@ void CTestSetGeneratorAppDlg::OnBnClickedButton1()
 	{
 		is_polygon_gen_success = GenerateTriangle(poly);
 	}
-	
+	*/
 	//Update Side Lengths
 
 	/*DEBUGGING*/
-	/*is_polygon_gen_success = true;*/
+	is_polygon_gen_success = true;
 	/*DEBUGGING*/
 	
 	if (is_polygon_gen_success)
 	{	
-		UpdateSideLengths(poly);
+		//UpdateSideLengths(poly);
 		m_lbl_progress.SetWindowTextW(L"Generating Polygons!");
 	
 		/*DEBUGGING*/
-		/*Triangle tri;
-		tri.InitializeEquilateral(400);
-		tri.SetSideThickness(Triangle::SL_AB, 100);
-		tri.SetSideThickness(Triangle::SL_BC, 1);
-		tri.SetSideThickness(Triangle::SL_CA, 1);
+		Triangle tri;
+		tri.InitializeObtuse(200, 100, 290, 130, 30, 20);
+		tri.SetSideThickness(Triangle::SL_AB, 50);
+		tri.SetSideThickness(Triangle::SL_BC, 40);
+		tri.SetSideThickness(Triangle::SL_CA, 30);
 		*poly = *(tri.ReturnSelfAsPolygon());	
-		Quadrilateral quad;
+		/*Quadrilateral quad;
 		quad.InitializeSquare(700);
 		quad.SetSideThickness(Quadrilateral::SL_AB, 50);
 		quad.SetSideThickness(Quadrilateral::SL_BC, 50);
 		quad.SetSideThickness(Quadrilateral::SL_CD, 50);
 		quad.SetSideThickness(Quadrilateral::SL_DA, 50);
 		*poly = *(quad.ReturnSelfAsPolygon());	*/
-		/*m_generator.SetNumXPixels(1100);
-		m_generator.SetNumYPixels(1100);
+		m_generator.SetNumXPixels(500);
+		m_generator.SetNumYPixels(500);
 		m_generator.SetRotationRange(360);
-		m_generator.SetRotationIncrement(1);*/
+		m_generator.SetRotationIncrement(1);
 		/*DEBUGGING*/
 
-		m_generator.SetNumXPixels(GetPixelWidth());
+		/*m_generator.SetNumXPixels(GetPixelWidth());
 		m_generator.SetNumYPixels(GetPixelHeight());
 		m_generator.SetRotationRange(GetRotationRange());
-		m_generator.SetRotationIncrement(GetRotationIncrement());
+		m_generator.SetRotationIncrement(GetRotationIncrement());*/
 		m_generator.SetPolygon(*poly);
 		m_generator.GenerateTestSet();
 	}

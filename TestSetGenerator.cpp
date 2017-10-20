@@ -48,9 +48,8 @@ TestSetGenerator::TestSetGenerator(void)
 	m_num_y_pixels = 1;
 	m_rotation_range = 0;
 	m_rotation_incrememnt = 0;
-	m_cleanup_color_override = true;
-	m_cleanup_turn_all_colors_on = false ;
-	m_shade_turn_all_colors_off = true;
+	m_cleanup_turn_all_colors_on = false;
+	m_shade_turn_all_colors_on = true;
 
 	ResetAnalytics();
 
@@ -141,7 +140,7 @@ void TestSetGenerator::ShadeShape(array2d<rgb_pixel> & image, SBX::Polygon poly)
 
 		if (prev_thickness != thickness) //We don't need to waste resources if this is the case
 		{
-			if (prev_slope > 1.0 && starting_vertex_y != ending_vertex_y) //stacked y
+			if (prev_slope > 1.0) //stacked y
 			//if (abs(slope) < 1 && slope != 0)  //stacked x
 			{ 
 				if (starting_vertex_y < ending_vertex_y)
@@ -182,7 +181,7 @@ void TestSetGenerator::ShadeShape(array2d<rgb_pixel> & image, SBX::Polygon poly)
 					}
 				}
 			}
-			else if (prev_slope < 1 && prev_slope != 0)  //stacked x
+			else if (prev_slope < 1)  //stacked x
 			//else if (abs(slope) > 1.0 && starting_vertex_y != ending_vertex_y) //stacked y
 			{
 				if (starting_vertex_y > ending_vertex_y)
@@ -377,8 +376,8 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 		long shade = Quadrilateral::IsSideShadeUp(side) ? 1 : -1;
 		int prev_thickness = prev_side.GetThickness();
 		int next_thickness = next_side.GetThickness();
-		double prev_slope = prev_side.GetSlope();
-		double next_slope = next_side.GetSlope();
+		double prev_slope = abs(prev_side.GetSlope());
+		double next_slope = abs(next_side.GetSlope());
 		double slope = abs(side.GetSlope());
 		double inverse_slope = slope != 0 ? 1 / slope : 0;
 		Vertex start_vertex = *(side.GetStartingVertex());
@@ -393,11 +392,10 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 		bool is_ending_angle_obtuse = end_vertex.GetAngle() > 90.0;
 		bool is_starting_angle_right = end_vertex.GetAngle() == 90.0;
 		bool is_ending_angle_right = end_vertex.GetAngle() == 90.0;
-
 		
 		if (is_starting_angle_obtuse || is_starting_angle_right)
 		{
-			if (abs(prev_slope) > 1 || abs(next_slope) > 1)
+			if (prev_slope > 1 || next_slope > 1)
 			{
 				if (start_vertex_y > end_vertex_y)
 				{
@@ -422,7 +420,7 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 					}
 				}
 			}
-			if ((abs(prev_slope) < 1 || abs(next_slope) < 1) && slope != 0)
+			if ((prev_slope < 1 || next_slope < 1) && slope != 0)
 			{
 				if (start_vertex_y > end_vertex_y)
 				{
@@ -447,7 +445,7 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 					}
 				}
 			}
-			if (abs(prev_slope) == 1 || abs(next_slope) == 1 && (start_vertex_y != end_vertex_y))
+			if (prev_slope == 1 || next_slope == 1 && (start_vertex_y != end_vertex_y))
 			{
 				if (start_vertex_y > end_vertex_y)
 				{
@@ -475,7 +473,7 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 		}
 		if (is_ending_angle_obtuse || is_ending_angle_right)
 		{
-			if (abs(prev_slope) > 1 || abs(next_slope) > 1)
+			if (prev_slope > 1 || next_slope > 1)
 			{
 				if (start_vertex_y > end_vertex_y)
 				{
@@ -500,7 +498,7 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 					}
 				}
 			}
-			if ((abs(prev_slope) < 1 || abs(next_slope) < 1) && slope != 0)
+			if ((prev_slope < 1 || next_slope < 1) && slope != 0)
 			{
 				if (start_vertex_y > end_vertex_y)
 				{
@@ -525,7 +523,7 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 					}
 				}
 			}
-			if (abs(prev_slope) == 1 || abs(next_slope) == 1 && (start_vertex_y != end_vertex_y))
+			if (prev_slope == 1 || next_slope == 1 && (start_vertex_y != end_vertex_y))
 			{
 				if (start_vertex_y > end_vertex_y)
 				{
@@ -553,57 +551,108 @@ void TestSetGenerator::CleanupImage(array2d<rgb_pixel> & image, SBX::Polygon pol
 		}
 		if (is_starting_angle_acute)
 		{
-			if (slope != 0)
+			if (start_vertex_y > end_vertex_y)
 			{
-				if (start_vertex_y > end_vertex_y)
+				if (start_vertex_x > end_vertex_x)
 				{
-					if (start_vertex_x > end_vertex_x)
+					if (prev_slope > 1  ||  side.IsVertical())
 					{
 						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, start_vertex_y, -1, start_vertex_x - 1, start_vertex_x - prev_thickness, false, NEON_GREEN, image);
 					}
-					else //start_vertex_x < end_vertex_x
+					else if (!side.IsVertical())
+					{
+						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, start_vertex_x, -1, start_vertex_y + 1, start_vertex_y + prev_thickness, true, NEON_GREEN, image);
+					}
+				}
+				else //start_vertex_x < end_vertex_x
+				{
+					
+					if (prev_slope > 1 || side.IsVertical())
+					{
+						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, start_vertex_y, -1, start_vertex_x - 1, start_vertex_x - prev_thickness, false, YELLOWISH_GREEN, image);
+					}
+					else if (!side.IsVertical())
 					{
 						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, start_vertex_x, 1, start_vertex_y - 1, start_vertex_y - prev_thickness, false, YELLOWISH_GREEN, image);
 					}
 				}
-				else //start_vertex_y < end_vertex_y
+			}
+			else //start_vertex_y < end_vertex_y
+			{
+				if (start_vertex_x > end_vertex_x)
 				{
-					if (start_vertex_x > end_vertex_x)
+					if (prev_slope > 1 || side.IsVertical())
+					{
+						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, start_vertex_y, 1, start_vertex_x + 1, start_vertex_x + prev_thickness, true, NAVY_BLUE, image);
+					}
+					else if (!side.IsVertical())
 					{
 						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, start_vertex_x, -1, start_vertex_y + 1, start_vertex_y + prev_thickness, true, NAVY_BLUE, image);
 					}
-					else //start_vertex_x < end_vertex_x
+				}
+				else //start_vertex_x < end_vertex_x
+				{
+					if (prev_slope > 1 || side.IsVertical())
 					{
 						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, start_vertex_y, 1, start_vertex_x + 1, start_vertex_x + prev_thickness, true, DARK_PURPLE, image);
+					}
+					else if (!side.IsVertical())
+					{
+						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, start_vertex_x, 1, start_vertex_y - 1, start_vertex_y - prev_thickness, false, DARK_PURPLE, image);
 					}
 				}
 			}
 		}
 		if (is_ending_angle_acute)
 		{
-			if (slope != 0)
+			if (start_vertex_y > end_vertex_y)
 			{
-				if (start_vertex_y > end_vertex_y)
+				if (start_vertex_x > end_vertex_x)
 				{
-					if (start_vertex_x > end_vertex_x)
+					if (next_slope > 1 || side.IsVertical())
+					{
+						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, end_vertex_y, 1, end_vertex_x + 1, end_vertex_x - next_thickness, false, BURNT_ORANGE, image);
+					}
+					else if (!side.IsVertical())
 					{
 						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, end_vertex_x, 1, end_vertex_y + 1, end_vertex_y + next_thickness, true, BURNT_ORANGE, image);
 					}
-					else //start_vertex_x < end_vertex_x
+				}
+				else //start_vertex_x < end_vertex_x
+				{						
+					if (next_slope > 1 || side.IsVertical())
 					{
 						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, end_vertex_y, 1, end_vertex_x - 1, end_vertex_x - next_thickness, false, DARK_PINK, image);
 					}
+					else if (!side.IsVertical())
+					{
+						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, end_vertex_x, -1, end_vertex_y - 1, end_vertex_y - next_thickness, false, DARK_PINK, image);
+					}
 				}
-				else //start_vertex_y < end_vertex_y
+			}
+			else //start_vertex_y < end_vertex_y
+			{
+				if (start_vertex_x > end_vertex_x)
 				{
-					if (start_vertex_x > end_vertex_x)
+					if (next_slope > 1 || side.IsVertical())
 					{
 						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, end_vertex_y, -1, end_vertex_x + 1, end_vertex_x + next_thickness, true, DEEP_RED, image);
 					}
-					else //start_vertex_x < end_vertex_x
+					else if (!side.IsVertical())
+					{
+						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, end_vertex_x, 1, end_vertex_y + 1, end_vertex_y + next_thickness, true, DEEP_RED, image);
+					}
+				}
+				else //start_vertex_x < end_vertex_x
+				{
+					if (next_slope > 1 || side.IsVertical())
+					{
+						CleanupEdgesForSlopeGreaterThanOneAcuteAngle(side, end_vertex_y, -1, end_vertex_x + 1, end_vertex_x + next_thickness, true, FOREST_GREEN, image);
+					}
+					else if (!side.IsVertical())
 					{
 						CleanupEdgesForSlopeLessThanOneAcuteAngle(side, end_vertex_x, -1, end_vertex_y - 1, end_vertex_y - next_thickness, false, FOREST_GREEN, image);
-					}
+					}						
 				}
 			}
 		}
@@ -711,8 +760,8 @@ void TestSetGenerator::GenerateTestSet(void)
 				//{
 				//	for (long y_trans = translation.second; y_trans < y_max; y_trans++)
 			//		{
-						long x_trans = 100;
-						long y_trans = 100;
+						long x_trans = 50;
+						long y_trans = 50;
 						time_t translate_polygon_timer;
 						time(&translate_polygon_timer);
 
@@ -980,7 +1029,6 @@ bool TestSetGenerator::UpdatePixelToWhite(int j, int k, rgb_pixel color, array2d
 	{
 		if (!IsPixelWhite(image[k][j]))
 		{
-			color = m_cleanup_color_override ? WHITE : color;
 			image[k][j] = m_cleanup_turn_all_colors_on ? color : WHITE;
 
 			updated_pixel = true;
@@ -1027,7 +1075,7 @@ int TestSetGenerator::ValidateYValue(int y)
 //...................................................................................
 void TestSetGenerator::DrawShadeLine(int x1, int y1, int x2, int y2, rgb_pixel color, array2d<rgb_pixel> & image)
 {
-	color = m_shade_turn_all_colors_off ? BLACK : color;
+	color = m_shade_turn_all_colors_on ? color : BLACK;
 
 	draw_line(x1, y1, x2, y2, image, color);
 }
@@ -1069,6 +1117,11 @@ void TestSetGenerator::ShadeShapeCycleY(SBX::Polygon poly, Side side, Side prev_
 	if (poly.IsPointInsidePolygon((float)x1, (float)y)  || poly.IsPointInsidePolygon((float)x2, (float)y))
 	{
 		bool continue_shading = is_cycle_up ? x1 > x2 : x1 <= x2;
+		if (side.IsVertical() || prev_side.IsVertical())
+		{
+			continue_shading = false;
+		}
+
 		while (continue_shading)
 		{
 			DrawShadeLine(x1, y, x2, y, color, image);

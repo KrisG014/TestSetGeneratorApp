@@ -167,7 +167,7 @@ namespace SBX
 		MT_ERROR_TYPE ValidateInteriorAngles(void);
 
 		float GetTotalInteriorAngleMeasure(void);
-		void CalculateConnectingVertexAndSideLengths(void);
+		void CalculateConnectingVertexAndSideLengths(Side * side_1);
 
 		//Static operations on quadrilateral objects
 		static int      GetVertexXCoord(Vertex vertex);
